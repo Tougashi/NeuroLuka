@@ -146,7 +146,7 @@ if __name__ == "__main__":
     analyzer = WoundAnalyzer()
     
     # Load gambar
-    image_path = "D:/Farid2/Tugas/kalkulus2/UAS/Wound_dataset/Abrasions/abrasions (24).jpg"
+    image_path = "Wound_dataset/Abrasions/abrasions (65).jpg"
     analyzer.load_image(image_path)
     
     # Preprocessing
