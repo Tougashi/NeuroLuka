@@ -1,6 +1,7 @@
 import { Poppins } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
+import 'remixicon/fonts/remixicon.css'
 
 const fontPoppins = Poppins ({
   subsets: ["latin"],
