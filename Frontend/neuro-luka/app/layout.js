@@ -3,6 +3,7 @@ import "./globals.css";
 import Navbar from "@/components/Navbar";
 import 'remixicon/fonts/remixicon.css'
 import Hero from "@/components/Hero";
+import Sosmed from "@/components/Sosmed";
 
 const fontPoppins = Poppins ({
   subsets: ["latin"],
@@ -22,6 +23,7 @@ export default function RootLayout({ children }) {
       >
         <Navbar />
         <Hero />
+        <Sosmed />
         <div className="container mx-auto px-4">
         {children}
         </div>
