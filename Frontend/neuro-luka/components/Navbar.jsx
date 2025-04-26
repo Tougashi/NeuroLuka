@@ -13,7 +13,7 @@ const Navbar = () => {
   }
 
   return (
-    <div className='navbar py-4 border-1 border-slate-300 '>
+    <div className='navbar py-4 shadow-lg '>
       <div className="container mx-auto px-6">
         <div className="navbar-box flex items-center justify-between">
           <div className="logo flex gap-4">
