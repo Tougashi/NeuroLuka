@@ -3,164 +3,314 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy import ndimage
 from skimage import measure
+import tensorflow as tf
+from tensorflow.keras import layers, models
+from sklearn.model_selection import train_test_split
+import os
+from imutils import paths
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
 
-class WoundAnalyzer:
-    def __init__(self):
-        self.pixel_to_cm_ratio = None  # akan diisi dari objek kalibrasi
-        self.reference_size_cm = 2.54  # ukuran objek referensi dalam cm (misalnya koin)
+class AnalisisLuka:
+    def __init__(self, path_model=None):
+        self.rasio_pixel_ke_cm = None
+        self.ukuran_referensi_cm = 2.54  # ukuran objek referensi (misal koin)
+        
+        # Inisialisasi model CNN
+        if path_model and os.path.exists(path_model):
+            self.model = tf.keras.models.load_model(path_model)
+            print("Memuat model CNN yang sudah dilatih")
+        else:
+            self.model = self.bangun_model_cnn()
+            print("Membuat model CNN baru")
     
-    def load_image(self, image_path):
+    def bangun_model_cnn(self):
+        """Membangun model CNN gaya U-Net untuk segmentasi luka"""
+        # Input gambar
+        input = tf.keras.Input(shape=(256, 256, 3))
+        
+        # Path downsampling
+        x = layers.Conv2D(64, 3, padding='same', activation='relu')(input)
+        x = layers.Conv2D(64, 3, padding='same', activation='relu')(x)
+        x = layers.MaxPooling2D(2)(x)
+        
+        x = layers.Conv2D(128, 3, padding='same', activation='relu')(x)
+        x = layers.Conv2D(128, 3, padding='same', activation='relu')(x)
+        x = layers.MaxPooling2D(2)(x)
+        
+        x = layers.Conv2D(256, 3, padding='same', activation='relu')(x)
+        x = layers.Conv2D(256, 3, padding='same', activation='relu')(x)
+        x = layers.MaxPooling2D(2)(x)
+        
+        # Bagian tengah jaringan
+        x = layers.Conv2D(512, 3, padding='same', activation='relu')(x)
+        x = layers.Conv2D(512, 3, padding='same', activation='relu')(x)
+        
+        # Path upsampling
+        x = layers.UpSampling2D(2)(x)
+        x = layers.Conv2D(256, 3, padding='same', activation='relu')(x)
+        x = layers.Conv2D(256, 3, padding='same', activation='relu')(x)
+        
+        x = layers.UpSampling2D(2)(x)
+        x = layers.Conv2D(128, 3, padding='same', activation='relu')(x)
+        x = layers.Conv2D(128, 3, padding='same', activation='relu')(x)
+        
+        x = layers.UpSampling2D(2)(x)
+        x = layers.Conv2D(64, 3, padding='same', activation='relu')(x)
+        x = layers.Conv2D(64, 3, padding='same', activation='relu')(x)
+        
+        # Output
+        output = layers.Conv2D(1, 1, activation='sigmoid')(x)
+        
+        model = tf.keras.Model(inputs=input, outputs=output)
+        
+        model.compile(optimizer='adam',
+                     loss='binary_crossentropy',
+                     metrics=['accuracy', tf.keras.metrics.MeanIoU(num_classes=2)])
+        
+        return model
+    
+    def latih_model(self, direktori_gambar, direktori_mask, epochs=50, batch_size=8):
+        """Melatih model CNN dengan gambar luka dan mask-nya"""
+        # Memuat dan memproses data pelatihan
+        daftar_gambar = sorted(list(paths.list_images(direktori_gambar)))
+        daftar_mask = sorted(list(paths.list_images(direktori_mask)))
+        
+        gambar = []
+        mask = []
+        
+        for path_gambar, path_mask in zip(daftar_gambar, daftar_mask):
+            img = cv2.imread(path_gambar)
+            img = cv2.resize(img, (256, 256))
+            img = img / 255.0
+            gambar.append(img)
+            
+            msk = cv2.imread(path_mask, cv2.IMREAD_GRAYSCALE)
+            msk = cv2.resize(msk, (256, 256))
+            msk = (msk > 127).astype(np.float32)  # Binerisasi mask
+            mask.append(msk)
+        
+        gambar = np.array(gambar)
+        mask = np.array(mask)
+        mask = np.expand_dims(mask, axis=-1)
+        
+        # Membagi data untuk validasi
+        X_train, X_val, y_train, y_val = train_test_split(
+            gambar, mask, test_size=0.2, random_state=42)
+        
+        # Augmentasi data
+        augmentasi = ImageDataGenerator(
+            rotation_range=20,
+            width_shift_range=0.1,
+            height_shift_range=0.1,
+            shear_range=0.1,
+            zoom_range=0.1,
+            horizontal_flip=True,
+            fill_mode='nearest')
+        
+        # Callback untuk pelatihan
+        callback = [
+            EarlyStopping(patience=10, verbose=1),
+            ModelCheckpoint('model_luka_terbaik.keras', save_best_only=True, verbose=1)
+        ]
+        
+        # Melatih model
+        riwayat = self.model.fit(
+            augmentasi.flow(X_train, y_train, batch_size=batch_size),
+            steps_per_epoch=len(X_train) // batch_size,
+            epochs=epochs,
+            validation_data=(X_val, y_val),
+            callbacks=callback)
+        
+        # Menyimpan model yang sudah dilatih
+        self.model.save('model_segmentasi_luka.keras')
+        
+        return riwayat
+    
+    def muat_gambar(self, path_gambar):
         """Memuat gambar dari path file"""
-        self.original_image = cv2.imread(image_path)
-        if self.original_image is None:
-            raise Exception(f"Tidak dapat memuat gambar dari {image_path}")
-        self.working_image = self.original_image.copy()
-        return self.original_image
+        self.gambar_asli = cv2.imread(path_gambar)
+        if self.gambar_asli is None:
+            raise Exception(f"Tidak dapat memuat gambar dari {path_gambar}")
+        self.gambar_kerja = self.gambar_asli.copy()
+        return self.gambar_asli
     
-    def preprocess_image(self):
-        """Preprocessing dasar gambar"""
-        # Resize gambar untuk konsistensi
-        height, width = self.working_image.shape[:2]
-        max_dimension = 800
-        if max(height, width) > max_dimension:
-            scale = max_dimension / max(height, width)
-            self.working_image = cv2.resize(self.working_image, 
-                                           (int(width * scale), int(height * scale)))
+    def praproses_gambar(self):
+        """Mempersiapkan gambar untuk CNN"""
+        # Menyimpan dimensi asli
+        self.tinggi_asli, self.lebar_asli = self.gambar_kerja.shape[:2]
         
-        # Konversi ke LAB color space
-        self.lab_image = cv2.cvtColor(self.working_image, cv2.COLOR_BGR2LAB)
+        # Resize untuk input CNN
+        self.input_cnn = cv2.resize(self.gambar_kerja, (256, 256))
+        self.input_cnn = self.input_cnn / 255.0
+        self.input_cnn = np.expand_dims(self.input_cnn, axis=0)
         
-        # Filter untuk mengurangi noise
-        self.working_image = cv2.GaussianBlur(self.working_image, (5, 5), 0)
-        
-        return self.working_image
+        return self.input_cnn
     
-    def calibrate_with_reference(self, reference_mask=None):
-        """
-        Kalibrasi menggunakan objek referensi
-        Dapat menggunakan objek referensi otomatis atau manual
-        """
-        if reference_mask is None:
-            gray = cv2.cvtColor(self.working_image, cv2.COLOR_BGR2GRAY)
-            circles = cv2.HoughCircles(gray, cv2.HOUGH_GRADIENT, 1, 20,
+    def kalibrasi_dengan_referensi(self, mask_referensi=None):
+        """Kalibrasi menggunakan objek referensi"""
+        if mask_referensi is None:
+            abu = cv2.cvtColor(self.gambar_kerja, cv2.COLOR_BGR2GRAY)
+            lingkaran = cv2.HoughCircles(abu, cv2.HOUGH_GRADIENT, 1, 20,
                                       param1=50, param2=30, minRadius=20, maxRadius=100)
             
-            if circles is not None:
-                circles = np.uint16(np.around(circles))
-                for i in circles[0, :]:
-                    # Gambar lingkaran objek referensi
-                    cv2.circle(self.working_image, (i[0], i[1]), i[2], (0, 255, 0), 2)
-                    
-                    # Hitung rasio pixel-to-cm
-                    reference_area_pixels = np.pi * (i[2] ** 2)
-                    reference_area_cm2 = np.pi * ((self.reference_size_cm / 2) ** 2)
-                    self.pixel_to_cm_ratio = reference_area_cm2 / reference_area_pixels
+            if lingkaran is not None:
+                lingkaran = np.uint16(np.around(lingkaran))
+                for i in lingkaran[0, :]:
+                    area_referensi_pixel = np.pi * (i[2] ** 2)
+                    area_referensi_cm2 = np.pi * ((self.ukuran_referensi_cm / 2) ** 2)
+                    self.rasio_pixel_ke_cm = area_referensi_cm2 / area_referensi_pixel
                     break
             else:
-                print("Tidak dapat mendeteksi objek referensi otomatis")
-                # Default rasio jika tidak ada kalibrasi
-                self.pixel_to_cm_ratio = 0.01  # 1 pixel = 0.01 cm²
+                print("Peringatan: Gagal mendeteksi referensi otomatis. Menggunakan rasio default")
+                self.rasio_pixel_ke_cm = 0.01
         else:
-            # Jika mask objek referensi disediakan
-            reference_area_pixels = np.sum(reference_mask > 0)
-            reference_area_cm2 = np.pi * ((self.reference_size_cm / 2) ** 2)
-            self.pixel_to_cm_ratio = reference_area_cm2 / reference_area_pixels
+            area_referensi_pixel = np.sum(mask_referensi > 0)
+            area_referensi_cm2 = np.pi * ((self.ukuran_referensi_cm / 2) ** 2)
+            self.rasio_pixel_ke_cm = area_referensi_cm2 / area_referensi_pixel
         
-        return self.pixel_to_cm_ratio
+        return self.rasio_pixel_ke_cm
     
-    def segment_wound(self):
-        """Segmentasi area luka"""
-        # Metode segmentasi warna dasar pada ruang warna LAB
-        # Range warna luka dapat disesuaikan berdasarkan dataset
-        lower_bound = np.array([0, 145, 130])
-        upper_bound = np.array([255, 170, 170])  
+    def segmentasi_luka(self):
+        """Segmentasi luka menggunakan CNN"""
+        if not hasattr(self, 'input_cnn'):
+            raise Exception("Lakukan praproses gambar terlebih dahulu")
         
-        # Membuat mask berdasarkan range warna
-        wound_mask = cv2.inRange(self.lab_image, lower_bound, upper_bound)
+        # Prediksi dengan CNN
+        prediksi_mask = self.model.predict(self.input_cnn)[0]
+        prediksi_mask = (prediksi_mask > 0.5).astype(np.uint8) * 255
         
-        # Operasi morfologi untuk memperbaiki mask
+        # Kembalikan ke ukuran asli
+        self.mask_luka_akhir = cv2.resize(prediksi_mask, 
+                                        (self.lebar_asli, self.tinggi_asli))
+        
+        # Pasca-pemrosesan
         kernel = np.ones((5,5), np.uint8)
-        wound_mask = cv2.morphologyEx(wound_mask, cv2.MORPH_OPEN, kernel)
-        wound_mask = cv2.morphologyEx(wound_mask, cv2.MORPH_CLOSE, kernel)
+        self.mask_luka_akhir = cv2.morphologyEx(self.mask_luka_akhir, 
+                                             cv2.MORPH_OPEN, kernel)
+        self.mask_luka_akhir = cv2.morphologyEx(self.mask_luka_akhir, 
+                                             cv2.MORPH_CLOSE, kernel)
         
-        contours, _ = cv2.findContours(wound_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        return self.mask_luka_akhir
+    
+    def hitung_luas_luka(self):
+        """Menghitung luas luka"""
+        if not hasattr(self, 'mask_luka_akhir'):
+            raise Exception("Mask luka belum dibuat. Jalankan segmentasi_luka() dulu")
         
-
-        if contours:
-            largest_contour = max(contours, key=cv2.contourArea)
-
-            self.final_wound_mask = np.zeros_like(wound_mask)
-            cv2.drawContours(self.final_wound_mask, [largest_contour], 0, 255, -1)
+        if self.rasio_pixel_ke_cm is None:
+            print("Peringatan: Menggunakan rasio pixel-ke-cm default")
+            self.rasio_pixel_ke_cm = 0.01 
+        
+        pixel_luka = np.sum(self.mask_luka_akhir > 0)
+        self.luas_luka_cm2 = pixel_luka * self.rasio_pixel_ke_cm
+        
+        # Hitung perimeter untuk metrik tambahan
+        kontur, _ = cv2.findContours(self.mask_luka_akhir, 
+                                   cv2.RETR_EXTERNAL, 
+                                   cv2.CHAIN_APPROX_SIMPLE)
+        if kontur:
+            self.keliling_luka = cv2.arcLength(kontur[0], True) * np.sqrt(self.rasio_pixel_ke_cm)
         else:
-            self.final_wound_mask = wound_mask
+            self.keliling_luka = 0
         
-        return self.final_wound_mask
+        return self.luas_luka_cm2
     
-    def calculate_wound_area(self):
-        """Hitung luas luka menggunakan konsep integral"""
-        if not hasattr(self, 'final_wound_mask'):
-            raise Exception("Wound mask belum dibuat. Jalankan segment_wound() dulu")
+    def tampilkan_hasil(self):
+        """Menampilkan hasil pengukuran"""
+        overlay = self.gambar_kerja.copy()
+        kontur_luka, _ = cv2.findContours(self.mask_luka_akhir, 
+                                        cv2.RETR_EXTERNAL, 
+                                        cv2.CHAIN_APPROX_SIMPLE)
         
-        if self.pixel_to_cm_ratio is None:
-            print("Warning: Rasio pixel-to-cm tidak dikalibrasi. Menggunakan default")
-            self.pixel_to_cm_ratio = 0.01 
+        cv2.drawContours(overlay, kontur_luka, -1, (0, 255, 0), 2)
         
-        wound_pixels = np.sum(self.final_wound_mask > 0)
-        self.wound_area_cm2 = wound_pixels * self.pixel_to_cm_ratio
-        
-        return self.wound_area_cm2
-    
-    def visualize_results(self):
-        """Visualisasi hasil pengukuran"""
-        # Overlay mask pada gambar asli
-        overlay = self.working_image.copy()
-        wound_contours, _ = cv2.findContours(self.final_wound_mask, 
-                                            cv2.RETR_EXTERNAL, 
-                                            cv2.CHAIN_APPROX_SIMPLE)
-        
-        cv2.drawContours(overlay, wound_contours, -1, (0, 255, 0), 2)
-        
-        # Tampilkan hasil
         plt.figure(figsize=(12, 8))
         
         plt.subplot(2, 2, 1)
-        plt.imshow(cv2.cvtColor(self.original_image, cv2.COLOR_BGR2RGB))
+        plt.imshow(cv2.cvtColor(self.gambar_asli, cv2.COLOR_BGR2RGB))
         plt.title('Gambar Asli')
         plt.axis('off')
         
         plt.subplot(2, 2, 2)
-        plt.imshow(self.final_wound_mask, cmap='gray')
-        plt.title('Segmentasi Luka')
+        plt.imshow(self.mask_luka_akhir, cmap='gray')
+        plt.title('Mask Segmentasi CNN')
         plt.axis('off')
         
         plt.subplot(2, 2, 3)
         plt.imshow(cv2.cvtColor(overlay, cv2.COLOR_BGR2RGB))
-        plt.title(f'Hasil Deteksi\nLuas Luka: {self.wound_area_cm2:.2f} cm²')
+        plt.title(f'Deteksi Luka\nLuas: {self.luas_luka_cm2:.2f} cm²\nKeliling: {self.keliling_luka:.2f} cm')
         plt.axis('off')
+        
+        # Tampilkan perhatian CNN (gradient-weighted class activation)
+        if hasattr(self, 'input_cnn'):
+            self.tampilkan_perhatian_cnn()
+            plt.subplot(2, 2, 4)
+            plt.imshow(self.peta_perhatian, cmap='jet')
+            plt.title('Peta Perhatian CNN')
+            plt.axis('off')
         
         plt.tight_layout()
         plt.show()
+    
+    def tampilkan_perhatian_cnn(self):
+        """Membuat peta perhatian menggunakan Grad-CAM"""
+        # Ambil layer konvolusi terakhir
+        layer_konvolusi_terakhir = next(layer for layer in self.model.layers[::-1] 
+                                     if isinstance(layer, layers.Conv2D))
+        
+        # Buat model yang memetakan input ke aktivasi layer konvolusi terakhir
+        model_grad = tf.keras.models.Model(
+            [self.model.inputs], [layer_konvolusi_terakhir.output, self.model.output])
+        
+        # Hitung gradien
+        with tf.GradientTape() as tape:
+            output_konvolusi, prediksi = model_grad(self.input_cnn)
+            loss = prediksi[:, 0]
+        
+        # Ekstrak filter dan gradien
+        output = output_konvolusi[0]
+        grads = tape.gradient(loss, output_konvolusi)[0]
+        
+        # Gabungkan gradien
+        weights = tf.reduce_mean(grads, axis=(0, 1))
+        cam = tf.reduce_sum(tf.multiply(weights, output), axis=-1)
+        
+        # Proses CAM
+        cam = cv2.resize(cam.numpy(), (256, 256))
+        cam = np.maximum(cam, 0)
+        cam = cam / cam.max()
+        
+        # Konversi ke heatmap
+        cam = cv2.applyColorMap(np.uint8(255 * cam), cv2.COLORMAP_JET)
+        self.peta_perhatian = cv2.cvtColor(cam, cv2.COLOR_BGR2RGB)
+        
+        return self.peta_perhatian
 
-# Penggunaan:
+# Contoh penggunaan:
 if __name__ == "__main__":
-    analyzer = WoundAnalyzer()
+    # Inisialisasi analyzer (dengan path model opsional)
+    analyzer = AnalisisLuka(path_model="model_segmentasi_luka.h5")
     
-    # Load gambar
-    image_path = "Wound_dataset/Abrasions/abrasions (65).jpg"
-    analyzer.load_image(image_path)
+    # Jika perlu melatih model:
+    # analyzer.latih_model("path_ke_gambar", "path_ke_mask", epochs=50)
     
-    # Preprocessing
-    analyzer.preprocess_image()
+    # Memuat gambar
+    path_gambar = "Wound_dataset/Abrasions/abrasions (65).jpg"
+    analyzer.muat_gambar(path_gambar)
     
-    # Kalibrasi dengan objek referensi
-    analyzer.calibrate_with_reference()
+    # Praproses
+    analyzer.praproses_gambar()
     
-    # Segmentasi luka
-    analyzer.segment_wound()
+    # Kalibrasi (opsional - butuh objek referensi dalam gambar)
+    analyzer.kalibrasi_dengan_referensi()
+    
+    # Segmentasi luka dengan CNN
+    analyzer.segmentasi_luka()
     
     # Hitung luas
-    area_cm2 = analyzer.calculate_wound_area()
-    print(f"Luas luka: {area_cm2:.2f} cm²")
+    luas_cm2 = analyzer.hitung_luas_luka()
+    print(f"Luas luka: {luas_cm2:.2f} cm²")
     
-    # Visualisasi
-    analyzer.visualize_results()
+    # Tampilkan hasil
+    analyzer.tampilkan_hasil()
