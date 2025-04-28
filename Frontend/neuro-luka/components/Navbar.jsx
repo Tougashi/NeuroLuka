@@ -13,7 +13,7 @@ const Navbar = () => {
   }
 
   return (
-    <div className='navbar py-4 shadow-lg '>
+    <div className='navbar py-4 shadow-md '>
       <div className="container mx-auto px-6">
         <div className="navbar-box flex items-center justify-between">
           <div className="logo flex gap-4">
@@ -22,22 +22,22 @@ const Navbar = () => {
           </div>
           <ul className={`menu flex items-center gap-12 md:static absolute left-1/2 -translate-x-1/2 ${active ? "top-24 opacity-100" : "top-20 opacity-0"} md:-translate-x-0 md:flex-row flex-col md:bg-transparent bg-green-900 w-full md:w-auto md:py-0 py-10 text-white md:text-black transition-all md:opacity-100 md:transition-none`}>
             <li>
-              <Link href={"#home"}>Home</Link>
+              <Link href={"#home"}>Beranda</Link>
             </li>
             <li>
-              <Link href={"#about"}>About</Link>
+              <Link href={"#about"}>Tentang</Link>
             </li>
             <li>
-              <Link href={"#service"}>Service</Link>
+              <Link href={"#service"}>Servis</Link>
             </li>
             <li>
-              <Link href={"#contact"}>Contact</Link>
+              <Link href={"#contact"}>Kontak</Link>
             </li>
             
           </ul>
           <div className='flex'>
-          <div className=' button flex items-center bg-green-900 px-3 py-0 md:px-5 md:py-3 rounded-3xl text-xs md:text-lg text-white'>
-            <Link href={"#login"}>Get Started</Link>
+          <div className=' button flex items-center bg-green-900 hover:bg-green-600 px-3 py-0 md:px-5 md:py-3 rounded-3xl text-xs md:text-lg text-white'>
+            <Link href={"#login"}>Masuk</Link>
           </div>
           
           <div className='md:hidden block' onClick={() => handleClick()}>

@@ -17,20 +17,31 @@ const Hero = () => {
   };
 
   return (
-    <div className=" container mx-auto px-0  py-8 rounded-lg shadow-lg overflow-hidden">
-      <div className="md:flex md:justify-between px-48 pt-24">
-        <div className=" ">
+    <div className=" container mx-auto px-0  py-8 rounded-lg shadow-xs overflow-hidden">
+      <div className="md:flex md:justify-between px-40 pt-24 ">
+          <div className="absolute inset-0  -z-10 ">
+            {/* Ganti "/images/background-blob.png" dengan path ke gambar Anda */}
+            <Image 
+              src="/Group 4.png"
+              
+              alt=""
+              fill
+              style={{ objectFit: 'contain' }}
+              priority
+            />
+          </div>
+        <div className=" pt-12 ">
           {/* bg-gradient-to-br  from-teal-50  to-white md:w-1/2" */}
-          <h1 className="text-8xl font-semibold text-gray-800 gap-6">
-            Ukur Area
+          <h1 className="text-6xl font-semibold text-gray-800 gap-6 mb-2">
+            Ukur Area Luka Kulit 
           </h1>
-          <h1 className='text-7xl font-semibold text-gray-800 mb-2'>Luka Kulit</h1>
-          <h1 className='text-6xl font-semibold text-gray-800 mb-2'>Otomatis</h1>
-          <h1 className='text-6xl font-semibold text-gray-800 mb-4'>dari Foto</h1>
+          {/* <h1 className='text-6xl font-semibold text-gray-800 mb-2'>Luka Kulit</h1> */}
+          <h1 className='text-6xl font-semibold text-gray-800 mb-2'>Otomatis dari Foto</h1>
+          {/* <h1 className='text-6xl font-semibold text-gray-800 mb-4'>dari Foto</h1> */}
           <div className="space-y-4 text-gray-800">
             <p className='text-3xl'>Otomatis mengukur ukuran luka</p>
-            <p className='text-2xl'>Bekerja untuk semua jenis luka</p>
-            <p className='text-xl'>Prediksi Pemulihan Luka</p>
+            <p className='text-3xl'>Bekerja untuk semua jenis luka</p>
+            <p className='text-3xl'>Prediksi Pemulihan Luka</p>
           </div>
         </div>
         
@@ -54,7 +65,7 @@ const Hero = () => {
                 </button>
               </div>
             ) : (
-              <label className="flex flex-col items-center justify-center h-96 border-2 border-dashed border-gray-400 rounded-lg cursor-pointer hover:bg-gray-50">
+              <label className="flex flex-col items-center justify-center h-80 border-2 border-dashed border-gray-400 rounded-lg cursor-pointer ">
                 <div className="flex flex-col items-center justify-center pt-5 pb-6">
                   <div className="text-green-900 mb-3">
                     <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
