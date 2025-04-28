@@ -2,130 +2,348 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import ndimage
-from skimage import measure
-import tensorflow as tf
-from tensorflow.keras import layers, models
-from sklearn.model_selection import train_test_split
+from skimage import measure, color
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from torch.utils.data import Dataset, DataLoader, random_split
+from torchvision import transforms
 import os
 from imutils import paths
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
-from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
+from PIL import Image
+import torchvision.transforms.functional as TF
+from tqdm import tqdm 
+
+class UNet(nn.Module):
+    def __init__(self):
+        super(UNet, self).__init__()
+        # Encoder dengan fitur yang lebih banyak
+        self.enc1 = self._block(3, 64)
+        self.enc2 = self._block(64, 128)
+        self.enc3 = self._block(128, 256)
+        self.enc4 = self._block(256, 512)
+        self.enc5 = self._block(512, 1024)  # Tambahan layer encoder
+        
+        # Decoder dengan skip connections yang lebih banyak
+        self.up1 = nn.ConvTranspose2d(1024, 512, kernel_size=2, stride=2)
+        self.dec1 = self._block(1024, 512)  # 1024 karena skip connection
+        
+        self.up2 = nn.ConvTranspose2d(512, 256, kernel_size=2, stride=2)
+        self.dec2 = self._block(512, 256)  # 512 karena skip connection
+        
+        self.up3 = nn.ConvTranspose2d(256, 128, kernel_size=2, stride=2)
+        self.dec3 = self._block(256, 128)  # 256 karena skip connection
+        
+        self.up4 = nn.ConvTranspose2d(128, 64, kernel_size=2, stride=2)
+        self.dec4 = self._block(128, 64)  # 128 karena skip connection
+        
+        # Output layer dengan kernel yang lebih kecil untuk detail yang lebih baik
+        self.final = nn.Conv2d(64, 1, kernel_size=1)
+        
+        # Max pooling
+        self.pool = nn.MaxPool2d(kernel_size=2, stride=2)
+        
+        # Tambahan: Attention gate untuk fokus pada area luka
+        self.attention1 = AttentionGate(512, 512)
+        self.attention2 = AttentionGate(256, 256)
+        self.attention3 = AttentionGate(128, 128)
+        self.attention4 = AttentionGate(64, 64)
+    
+    def _block(self, in_channels, out_channels):
+        return nn.Sequential(
+            nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1),
+            nn.BatchNorm2d(out_channels),  # Tambahan batch normalization
+            nn.ReLU(inplace=True),
+            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
+            nn.BatchNorm2d(out_channels),
+            nn.ReLU(inplace=True)
+        )
+    
+    def forward(self, x):
+        # Encoder
+        enc1 = self.enc1(x)
+        x = self.pool(enc1)
+        
+        enc2 = self.enc2(x)
+        x = self.pool(enc2)
+        
+        enc3 = self.enc3(x)
+        x = self.pool(enc3)
+        
+        enc4 = self.enc4(x)
+        x = self.pool(enc4)
+        
+        x = self.enc5(x)
+        
+        # Decoder dengan attention gates
+        x = self.up1(x)
+        enc4 = self.attention1(enc4, x)
+        x = torch.cat([x, enc4], dim=1)
+        x = self.dec1(x)
+        
+        x = self.up2(x)
+        enc3 = self.attention2(enc3, x)
+        x = torch.cat([x, enc3], dim=1)
+        x = self.dec2(x)
+        
+        x = self.up3(x)
+        enc2 = self.attention3(enc2, x)
+        x = torch.cat([x, enc2], dim=1)
+        x = self.dec3(x)
+        
+        x = self.up4(x)
+        enc1 = self.attention4(enc1, x)
+        x = torch.cat([x, enc1], dim=1)
+        x = self.dec4(x)
+        
+        x = self.final(x)
+        
+        return torch.sigmoid(x)  # Sigmoid untuk output 0-1
+
+
+class AttentionGate(nn.Module):
+    """Attention Gate untuk fokus pada area penting"""
+    def __init__(self, in_channels, out_channels):
+        super(AttentionGate, self).__init__()
+        self.W_g = nn.Sequential(
+            nn.Conv2d(in_channels, out_channels, kernel_size=1),
+            nn.BatchNorm2d(out_channels)
+        )
+        self.W_x = nn.Sequential(
+            nn.Conv2d(out_channels, out_channels, kernel_size=1),
+            nn.BatchNorm2d(out_channels)
+        )
+        self.psi = nn.Sequential(
+            nn.Conv2d(out_channels, 1, kernel_size=1),
+            nn.BatchNorm2d(1),
+            nn.Sigmoid()
+        )
+        self.relu = nn.ReLU(inplace=True)
+        
+    def forward(self, x, g):
+        g = self.W_g(g)
+        x = self.W_x(x)
+        
+        # Jika ukuran berbeda, lakukan resize
+        if g.size(2) != x.size(2) or g.size(3) != x.size(3):
+            g = F.interpolate(g, size=x.size()[2:], mode='bilinear', align_corners=True)
+            
+        psi = self.relu(g + x)
+        psi = self.psi(psi)
+        return x * psi
+
+
+class WoundDataset(Dataset):
+    def __init__(self, img_paths, mask_paths, transform=None, augment=False):
+        self.img_paths = img_paths
+        self.mask_paths = mask_paths
+        self.transform = transform
+        self.augment = augment
+    
+    def __len__(self):
+        return len(self.img_paths)
+    
+    def __getitem__(self, idx):
+        # Load image dan mask
+        image = Image.open(self.img_paths[idx]).convert('RGB')
+        mask = Image.open(self.mask_paths[idx]).convert('L')
+        
+        # Resize ke ukuran standar
+        image = image.resize((256, 256), Image.LANCZOS)
+        mask = mask.resize((256, 256), Image.NEAREST)
+        
+        # Data augmentation jika diaktifkan
+        if self.augment and torch.rand(1) < 0.5:
+            # Random rotasi
+            angle = torch.randint(-30, 30, (1,)).item()
+            image = TF.rotate(image, angle)
+            mask = TF.rotate(mask, angle)
+            
+            # Random horizontal flip
+            if torch.rand(1) < 0.5:
+                image = TF.hflip(image)
+                mask = TF.hflip(mask)
+            
+            # Random perubahan brightness dan contrast
+            if torch.rand(1) < 0.5:
+                brightness = 0.8 + 0.4 * torch.rand(1).item()
+                contrast = 0.8 + 0.4 * torch.rand(1).item()
+                image = TF.adjust_brightness(image, brightness)
+                image = TF.adjust_contrast(image, contrast)
+        
+        # Convert ke tensor
+        image = TF.to_tensor(image)
+        mask = TF.to_tensor(mask)
+        
+        # Normalisasi image
+        if self.transform:
+            image = self.transform(image)
+        
+        return image, mask
+
 
 class AnalisisLuka:
     def __init__(self, path_model=None):
         self.rasio_pixel_ke_cm = None
-        self.ukuran_referensi_cm = 2.54  # ukuran objek referensi (misal koin)
+        self.ukuran_referensi_cm = 2.54  # Ukuran objek referensi (misal koin)
         
-        # Inisialisasi model CNN
+        # Setup device
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        print(f"Menggunakan: {self.device}")
+        
+        # Inisialisasi model UNet yang ditingkatkan
+        self.model = UNet().to(self.device)
+        
+        # Load model jika path disediakan
         if path_model and os.path.exists(path_model):
-            self.model = tf.keras.models.load_model(path_model)
-            print("Memuat model CNN yang sudah dilatih")
+            self.model.load_state_dict(torch.load(path_model, map_location=self.device))
+            print("Memuat model PyTorch yang sudah dilatih")
+            self.model.eval()
         else:
-            self.model = self.bangun_model_cnn()
-            print("Membuat model CNN baru")
+            print("Membuat model PyTorch baru")
     
-    def bangun_model_cnn(self):
-        """Membangun model CNN gaya U-Net untuk segmentasi luka"""
-        # Input gambar
-        input = tf.keras.Input(shape=(256, 256, 3))
-        
-        # Path downsampling
-        x = layers.Conv2D(64, 3, padding='same', activation='relu')(input)
-        x = layers.Conv2D(64, 3, padding='same', activation='relu')(x)
-        x = layers.MaxPooling2D(2)(x)
-        
-        x = layers.Conv2D(128, 3, padding='same', activation='relu')(x)
-        x = layers.Conv2D(128, 3, padding='same', activation='relu')(x)
-        x = layers.MaxPooling2D(2)(x)
-        
-        x = layers.Conv2D(256, 3, padding='same', activation='relu')(x)
-        x = layers.Conv2D(256, 3, padding='same', activation='relu')(x)
-        x = layers.MaxPooling2D(2)(x)
-        
-        # Bagian tengah jaringan
-        x = layers.Conv2D(512, 3, padding='same', activation='relu')(x)
-        x = layers.Conv2D(512, 3, padding='same', activation='relu')(x)
-        
-        # Path upsampling
-        x = layers.UpSampling2D(2)(x)
-        x = layers.Conv2D(256, 3, padding='same', activation='relu')(x)
-        x = layers.Conv2D(256, 3, padding='same', activation='relu')(x)
-        
-        x = layers.UpSampling2D(2)(x)
-        x = layers.Conv2D(128, 3, padding='same', activation='relu')(x)
-        x = layers.Conv2D(128, 3, padding='same', activation='relu')(x)
-        
-        x = layers.UpSampling2D(2)(x)
-        x = layers.Conv2D(64, 3, padding='same', activation='relu')(x)
-        x = layers.Conv2D(64, 3, padding='same', activation='relu')(x)
-        
-        # Output
-        output = layers.Conv2D(1, 1, activation='sigmoid')(x)
-        
-        model = tf.keras.Model(inputs=input, outputs=output)
-        
-        model.compile(optimizer='adam',
-                     loss='binary_crossentropy',
-                     metrics=['accuracy', tf.keras.metrics.MeanIoU(num_classes=2)])
-        
-        return model
-    
-    def latih_model(self, direktori_gambar, direktori_mask, epochs=50, batch_size=8):
-        """Melatih model CNN dengan gambar luka dan mask-nya"""
-        # Memuat dan memproses data pelatihan
+    def latih_model(self, direktori_gambar, direktori_mask, epochs=100, batch_size=8):
+        """Melatih model UNet dengan gambar luka dan mask-nya"""
+        # Get all image and mask paths
         daftar_gambar = sorted(list(paths.list_images(direktori_gambar)))
         daftar_mask = sorted(list(paths.list_images(direktori_mask)))
         
-        gambar = []
-        mask = []
+        print(f"Total gambar: {len(daftar_gambar)}, Total mask: {len(daftar_mask)}")
         
-        for path_gambar, path_mask in zip(daftar_gambar, daftar_mask):
-            img = cv2.imread(path_gambar)
-            img = cv2.resize(img, (256, 256))
-            img = img / 255.0
-            gambar.append(img)
+        # Setup data transforms
+        transform = transforms.Compose([
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        ])
+        
+        # Create dataset dengan augmentasi untuk data training
+        dataset = WoundDataset(
+            daftar_gambar, 
+            daftar_mask, 
+            transform=transform,
+            augment=True  # Aktifkan data augmentation
+        )
+        
+        # Split data untuk training dan validasi
+        train_size = int(0.8 * len(dataset))
+        val_size = len(dataset) - train_size
+        train_dataset, val_dataset = random_split(dataset, [train_size, val_size])
+        
+        # Create data loaders
+        train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, 
+                                 num_workers=0)
+        val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, 
+                               num_workers=0)
+        
+        # Setup loss function - Gunakan kombinasi BCEWithLogitsLoss dan Dice Loss
+        # untuk hasil segmentasi yang lebih baik
+        criterion = CombinedLoss()
+        
+        # Optimizer dengan learning rate scheduler
+        optimizer = torch.optim.Adam(self.model.parameters(), lr=0.001)
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+            optimizer, mode='min', factor=0.1, patience=5, verbose=True
+        )
+        
+        # Training setup untuk mixed precision
+        scaler = torch.amp.GradScaler() if torch.cuda.is_available() else None
+        
+        # Gunakan multiple GPUs jika tersedia
+        if torch.cuda.device_count() > 1:
+            print(f"Menggunakan {torch.cuda.device_count()} GPUs!")
+            self.model = nn.DataParallel(self.model)
+        
+        self.model = self.model.to(self.device)
+        
+        # Inisialisasi best validation loss
+        best_val_loss = float('inf')
+        progress_format = '{l_bar}{bar:20}{r_bar}{bar:-20b}'
+        history = {'train_loss': [], 'val_loss': [], 'train_dice': [], 'val_dice': []}
+        
+        for epoch in range(epochs):
+            # Training phase dengan progress bar
+            self.model.train()
+            train_loss = 0.0
+            train_dice = 0.0
             
-            msk = cv2.imread(path_mask, cv2.IMREAD_GRAYSCALE)
-            msk = cv2.resize(msk, (256, 256))
-            msk = (msk > 127).astype(np.float32)  # Binerisasi mask
-            mask.append(msk)
+            # Progress bar untuk training
+            train_loop = tqdm(train_loader, 
+                            desc=f'Epoch {epoch+1}/{epochs} [Train]',
+                            bar_format=progress_format,
+                            leave=False)
+            
+            for images, masks in train_loop:
+                images = images.to(self.device)
+                masks = masks.to(self.device)
+                
+                optimizer.zero_grad()
+                
+                with torch.amp.autocast(device_type='cuda', dtype=torch.float16):
+                    outputs = self.model(images)
+                    loss, dice_score = criterion(outputs, masks)
+                
+                scaler.scale(loss).backward()
+                scaler.step(optimizer)
+                scaler.update()
+                
+                train_loss += loss.item() * images.size(0)
+                train_dice += dice_score.item() * images.size(0)
+                
+                # Update progress bar
+                train_loop.set_postfix(loss=loss.item(), dice=dice_score.item())
+            
+            train_loss /= len(train_loader.dataset)
+            train_dice /= len(train_loader.dataset)
+            history['train_loss'].append(train_loss)
+            history['train_dice'].append(train_dice)
+            
+            # Validation phase dengan progress bar
+            self.model.eval()
+            val_loss = 0.0
+            val_dice = 0.0
+            
+            # Progress bar untuk validation
+            val_loop = tqdm(val_loader,
+                        desc=f'Epoch {epoch+1}/{epochs} [Val]',
+                        bar_format=progress_format,
+                        leave=False)
+            
+            with torch.no_grad():
+                for images, masks in val_loop:
+                    images = images.to(self.device)
+                    masks = masks.to(self.device)
+                    
+                    outputs = self.model(images)
+                    loss, dice_score = criterion(outputs, masks)
+                    
+                    val_loss += loss.item() * images.size(0)
+                    val_dice += dice_score.item() * images.size(0)
+                    val_loop.set_postfix(loss=loss.item(), dice=dice_score.item())
+            
+            val_loss /= len(val_loader.dataset)
+            val_dice /= len(val_loader.dataset)
+            history['val_loss'].append(val_loss)
+            history['val_dice'].append(val_dice)
+            
+            # Update learning rate berdasarkan val_loss
+            scheduler.step(val_loss)
+            
+            # Print summary per epoch
+            print(f'\nEpoch {epoch+1}/{epochs} - '
+                f'Train Loss: {train_loss:.4f}, Dice: {train_dice:.4f}, '
+                f'Val Loss: {val_loss:.4f}, Dice: {val_dice:.4f}', flush=True)
+            
+            # Save best model
+            if val_dice > best_val_dice or (val_dice == best_val_dice and val_loss < best_val_loss):
+                best_val_loss = val_loss
+                best_val_dice = val_dice
+                torch.save(self.model.state_dict(), 'model_segmentasi_luka2.pth')
+                print(f"Model terbaik disimpan! (Loss: {best_val_loss:.4f}, Dice: {best_val_dice:.4f})")
         
-        gambar = np.array(gambar)
-        mask = np.array(mask)
-        mask = np.expand_dims(mask, axis=-1)
+        # Pastikan kita load model terbaik setelah training
+        self.model.load_state_dict(torch.load('model_segmentasi_luka2.pth', map_location=self.device))
+        self.model.eval()
         
-        # Membagi data untuk validasi
-        X_train, X_val, y_train, y_val = train_test_split(
-            gambar, mask, test_size=0.2, random_state=42)
-        
-        # Augmentasi data
-        augmentasi = ImageDataGenerator(
-            rotation_range=20,
-            width_shift_range=0.1,
-            height_shift_range=0.1,
-            shear_range=0.1,
-            zoom_range=0.1,
-            horizontal_flip=True,
-            fill_mode='nearest')
-        
-        # Callback untuk pelatihan
-        callback = [
-            EarlyStopping(patience=10, verbose=1),
-            ModelCheckpoint('model_luka_terbaik.keras', save_best_only=True, verbose=1)
-        ]
-        
-        # Melatih model
-        riwayat = self.model.fit(
-            augmentasi.flow(X_train, y_train, batch_size=batch_size),
-            steps_per_epoch=len(X_train) // batch_size,
-            epochs=epochs,
-            validation_data=(X_val, y_val),
-            callbacks=callback)
-        
-        # Menyimpan model yang sudah dilatih
-        self.model.save('model_segmentasi_luka.keras')
-        
-        return riwayat
+        return history
     
     def muat_gambar(self, path_gambar):
         """Memuat gambar dari path file"""
@@ -136,88 +354,182 @@ class AnalisisLuka:
         return self.gambar_asli
     
     def praproses_gambar(self):
-        """Mempersiapkan gambar untuk CNN"""
+        """Mempersiapkan gambar untuk model dengan preprocessing yang lebih baik"""
         # Menyimpan dimensi asli
         self.tinggi_asli, self.lebar_asli = self.gambar_kerja.shape[:2]
         
-        # Resize untuk input CNN
-        self.input_cnn = cv2.resize(self.gambar_kerja, (256, 256))
-        self.input_cnn = self.input_cnn / 255.0
-        self.input_cnn = np.expand_dims(self.input_cnn, axis=0)
+        # Resize ke ukuran yang model harapkan
+        img = cv2.resize(self.gambar_kerja, (256, 256))
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         
-        return self.input_cnn
+        # Normalisasi - gunakan mean dan std yang sama dengan saat training
+        img = img / 255.0
+        img = (img - np.array([0.485, 0.456, 0.406])) / np.array([0.229, 0.224, 0.225])
+        img = img.transpose(2, 0, 1)  # HWC to CHW
+        
+        # Convert to tensor
+        self.input_model = torch.from_numpy(img).float().unsqueeze(0).to(self.device)
+        
+        return self.input_model
     
-    def kalibrasi_dengan_referensi(self, mask_referensi=None):
-        """Kalibrasi menggunakan objek referensi"""
-        if mask_referensi is None:
-            abu = cv2.cvtColor(self.gambar_kerja, cv2.COLOR_BGR2GRAY)
-            lingkaran = cv2.HoughCircles(abu, cv2.HOUGH_GRADIENT, 1, 20,
-                                      param1=50, param2=30, minRadius=20, maxRadius=100)
+    def kalibrasi_dengan_referensi(self, diameter_referensi_cm=2.54):
+        """Kalibrasi dengan deteksi referensi otomatis yang lebih robust"""
+        gray = cv2.cvtColor(self.gambar_kerja, cv2.COLOR_BGR2GRAY)
+        blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+        
+        # Deteksi lingkaran (koin/referensi) dengan parameter yang lebih beragam
+        circles = cv2.HoughCircles(
+            blurred, cv2.HOUGH_GRADIENT, dp=1.2, 
+            minDist=100, param1=50, param2=30, 
+            minRadius=30, maxRadius=120
+        )
+        
+        if circles is not None:
+            circles = np.uint16(np.around(circles))
             
-            if lingkaran is not None:
-                lingkaran = np.uint16(np.around(lingkaran))
-                for i in lingkaran[0, :]:
-                    area_referensi_pixel = np.pi * (i[2] ** 2)
-                    area_referensi_cm2 = np.pi * ((self.ukuran_referensi_cm / 2) ** 2)
-                    self.rasio_pixel_ke_cm = area_referensi_cm2 / area_referensi_pixel
-                    break
-            else:
-                print("Peringatan: Gagal mendeteksi referensi otomatis. Menggunakan rasio default")
-                self.rasio_pixel_ke_cm = 0.01
+            # Cari lingkaran terbaik
+            best_circle = circles[0][0]
+            
+            # Gambar lingkaran terdeteksi untuk verifikasi visual
+            cv2.circle(
+                self.gambar_kerja, 
+                (best_circle[0], best_circle[1]), 
+                best_circle[2], (0,255,0), 2
+            )
+            
+            # Tambahkan teks keterangan
+            cv2.putText(
+                self.gambar_kerja, 
+                f"Referensi: {diameter_referensi_cm} cm", 
+                (best_circle[0] - best_circle[2], best_circle[1] - best_circle[2] - 10),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 1
+            )
+            
+            # Hitung rasio pixel ke cm
+            pixel_diameter = best_circle[2] * 2
+            self.rasio_pixel_ke_cm = diameter_referensi_cm / pixel_diameter
+            print(f"Referensi terdeteksi. Rasio: {self.rasio_pixel_ke_cm:.4f} cm/pixel")
         else:
-            area_referensi_pixel = np.sum(mask_referensi > 0)
-            area_referensi_cm2 = np.pi * ((self.ukuran_referensi_cm / 2) ** 2)
-            self.rasio_pixel_ke_cm = area_referensi_cm2 / area_referensi_pixel
+            # Fallback: gunakan nilai default atau manual input
+            print("Peringatan: Referensi otomatis tidak terdeteksi. Menggunakan rasio default.")
+            self.rasio_pixel_ke_cm = 0.01  # Nilai default
         
         return self.rasio_pixel_ke_cm
     
-    def segmentasi_luka(self):
-        """Segmentasi luka menggunakan CNN"""
-        if not hasattr(self, 'input_cnn'):
+    def segmentasi_luka(self, threshold=0.5, refinement=True):
+        """Segmentasi luka menggunakan model dengan post-processing yang ditingkatkan"""
+        if not hasattr(self, 'input_model'):
             raise Exception("Lakukan praproses gambar terlebih dahulu")
         
-        # Prediksi dengan CNN
-        prediksi_mask = self.model.predict(self.input_cnn)[0]
-        prediksi_mask = (prediksi_mask > 0.5).astype(np.uint8) * 255
+        # Evaluasi model
+        self.model.eval()
+        with torch.no_grad():
+            output = self.model(self.input_model)
+            prediksi_mask = output.cpu().numpy()[0, 0]
         
-        # Kembalikan ke ukuran asli
-        self.mask_luka_akhir = cv2.resize(prediksi_mask, 
-                                        (self.lebar_asli, self.tinggi_asli))
+        # Binerisasi mask dengan threshold yang dapat diatur
+        prediksi_mask = (prediksi_mask > threshold).astype(np.uint8) * 255
         
-        # Pasca-pemrosesan
-        kernel = np.ones((5,5), np.uint8)
-        self.mask_luka_akhir = cv2.morphologyEx(self.mask_luka_akhir, 
-                                             cv2.MORPH_OPEN, kernel)
-        self.mask_luka_akhir = cv2.morphologyEx(self.mask_luka_akhir, 
-                                             cv2.MORPH_CLOSE, kernel)
+        # Resize ke ukuran asli
+        self.mask_luka_akhir = cv2.resize(prediksi_mask, (self.lebar_asli, self.tinggi_asli))
+        
+        if refinement:
+            # Post-processing untuk hasil yang lebih baik
+            kernel_open = np.ones((5, 5), np.uint8)
+            kernel_close = np.ones((9, 9), np.uint8)
+            
+            self.mask_luka_akhir = cv2.morphologyEx(self.mask_luka_akhir, cv2.MORPH_OPEN, kernel_open)
+            self.mask_luka_akhir = cv2.morphologyEx(self.mask_luka_akhir, cv2.MORPH_CLOSE, kernel_close)
+            
+            # Fill holes dalam mask
+            contours, _ = cv2.findContours(self.mask_luka_akhir, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            if contours:
+                # Ambil kontur terbesar
+                max_contour = max(contours, key=cv2.contourArea)
+                mask_filled = np.zeros_like(self.mask_luka_akhir)
+                cv2.drawContours(mask_filled, [max_contour], 0, 255, -1)  # Fill kontur
+                self.mask_luka_akhir = mask_filled
+        
+        return self.mask_luka_akhir
+    
+    def improvisasi_deteksi_luka(self):
+        """Improvisasi deteksi luka menggunakan metode tambahan berbasis warna"""
+        if not hasattr(self, 'gambar_kerja'):
+            raise Exception("Gambar belum dimuat")
+        
+        # Convert ke HSV untuk deteksi warna yang lebih baik
+        hsv = cv2.cvtColor(self.gambar_kerja, cv2.COLOR_BGR2HSV)
+        
+        # Rentang warna untuk luka (merah & kuning)
+        lower_red1 = np.array([0, 70, 50])
+        upper_red1 = np.array([10, 255, 255])
+        lower_red2 = np.array([160, 70, 50])
+        upper_red2 = np.array([180, 255, 255])
+        lower_yellow = np.array([20, 70, 50])
+        upper_yellow = np.array([40, 255, 255])
+        
+        # Mask untuk merah dan kuning
+        mask_red1 = cv2.inRange(hsv, lower_red1, upper_red1)
+        mask_red2 = cv2.inRange(hsv, lower_red2, upper_red2)
+        mask_yellow = cv2.inRange(hsv, lower_yellow, upper_yellow)
+        
+        # Gabungkan mask
+        mask_combined = cv2.bitwise_or(mask_red1, mask_red2)
+        mask_combined = cv2.bitwise_or(mask_combined, mask_yellow)
+        
+        # Post-processing
+        kernel = np.ones((5, 5), np.uint8)
+        mask_combined = cv2.morphologyEx(mask_combined, cv2.MORPH_OPEN, kernel)
+        mask_combined = cv2.morphologyEx(mask_combined, cv2.MORPH_CLOSE, kernel)
+        
+        if hasattr(self, 'mask_luka_akhir'):
+            # Gabungkan dengan hasil segmentasi model
+            self.mask_luka_akhir = cv2.bitwise_or(self.mask_luka_akhir, mask_combined)
+            
+            # Post-processing final
+            kernel_final = np.ones((7, 7), np.uint8)
+            self.mask_luka_akhir = cv2.morphologyEx(self.mask_luka_akhir, cv2.MORPH_CLOSE, kernel_final)
+            
+            # Fill holes dalam mask
+            temp_mask = self.mask_luka_akhir.copy()
+            h, w = temp_mask.shape[:2]
+            mask = np.zeros((h+2, w+2), np.uint8)
+            cv2.floodFill(temp_mask, mask, (0,0), 255)
+            filled_mask = cv2.bitwise_not(temp_mask)
+            self.mask_luka_akhir = cv2.bitwise_or(self.mask_luka_akhir, filled_mask)
+        else:
+            self.mask_luka_akhir = mask_combined
         
         return self.mask_luka_akhir
     
     def hitung_luas_luka(self):
-        """Menghitung luas luka"""
+        """Menghitung luas luka dengan metode yang lebih akurat"""
         if not hasattr(self, 'mask_luka_akhir'):
             raise Exception("Mask luka belum dibuat. Jalankan segmentasi_luka() dulu")
         
         if self.rasio_pixel_ke_cm is None:
             print("Peringatan: Menggunakan rasio pixel-ke-cm default")
-            self.rasio_pixel_ke_cm = 0.01 
+            self.rasio_pixel_ke_cm = 0.01  # Default rasio
         
+        # Hitung area dalam pixel
         pixel_luka = np.sum(self.mask_luka_akhir > 0)
-        self.luas_luka_cm2 = pixel_luka * self.rasio_pixel_ke_cm
         
-        # Hitung perimeter untuk metrik tambahan
+        # Konversi ke cm²
+        self.luas_luka_cm2 = pixel_luka * (self.rasio_pixel_ke_cm ** 2)
+        
+        # Hitung perimeter
         kontur, _ = cv2.findContours(self.mask_luka_akhir, 
                                    cv2.RETR_EXTERNAL, 
                                    cv2.CHAIN_APPROX_SIMPLE)
         if kontur:
-            self.keliling_luka = cv2.arcLength(kontur[0], True) * np.sqrt(self.rasio_pixel_ke_cm)
+            self.keliling_luka = cv2.arcLength(kontur[0], True) * self.rasio_pixel_ke_cm
         else:
             self.keliling_luka = 0
         
         return self.luas_luka_cm2
-    
+
     def tampilkan_hasil(self):
-        """Menampilkan hasil pengukuran"""
+        """Menampilkan hasil pengukuran dengan visualisasi yang lebih detail"""
         overlay = self.gambar_kerja.copy()
         kontur_luka, _ = cv2.findContours(self.mask_luka_akhir, 
                                         cv2.RETR_EXTERNAL, 
@@ -225,7 +537,7 @@ class AnalisisLuka:
         
         cv2.drawContours(overlay, kontur_luka, -1, (0, 255, 0), 2)
         
-        plt.figure(figsize=(12, 8))
+        plt.figure(figsize=(14, 10))
         
         plt.subplot(2, 2, 1)
         plt.imshow(cv2.cvtColor(self.gambar_asli, cv2.COLOR_BGR2RGB))
@@ -234,7 +546,7 @@ class AnalisisLuka:
         
         plt.subplot(2, 2, 2)
         plt.imshow(self.mask_luka_akhir, cmap='gray')
-        plt.title('Mask Segmentasi CNN')
+        plt.title('Mask Segmentasi')
         plt.axis('off')
         
         plt.subplot(2, 2, 3)
@@ -242,75 +554,50 @@ class AnalisisLuka:
         plt.title(f'Deteksi Luka\nLuas: {self.luas_luka_cm2:.2f} cm²\nKeliling: {self.keliling_luka:.2f} cm')
         plt.axis('off')
         
-        # Tampilkan perhatian CNN (gradient-weighted class activation)
-        if hasattr(self, 'input_cnn'):
-            self.tampilkan_perhatian_cnn()
+        # Tambahan: Visualisasi peta perhatian atau overlay warna
+        if hasattr(self, 'input_model'):
+            # Buat visualisasi sederhana
+            colored_mask = np.zeros_like(self.gambar_asli)
+            colored_mask[self.mask_luka_akhir > 0] = [0, 255, 0]  # Area luka berwarna hijau
+            alpha = 0.5
+            blended = cv2.addWeighted(self.gambar_asli, 1-alpha, colored_mask, alpha, 0)
+            
             plt.subplot(2, 2, 4)
-            plt.imshow(self.peta_perhatian, cmap='jet')
-            plt.title('Peta Perhatian CNN')
+            plt.imshow(cv2.cvtColor(blended, cv2.COLOR_BGR2RGB))
+            plt.title('Overlay Segmentasi')
             plt.axis('off')
         
         plt.tight_layout()
         plt.show()
-    
-    def tampilkan_perhatian_cnn(self):
-        """Membuat peta perhatian menggunakan Grad-CAM"""
-        # Ambil layer konvolusi terakhir
-        layer_konvolusi_terakhir = next(layer for layer in self.model.layers[::-1] 
-                                     if isinstance(layer, layers.Conv2D))
         
-        # Buat model yang memetakan input ke aktivasi layer konvolusi terakhir
-        model_grad = tf.keras.models.Model(
-            [self.model.inputs], [layer_konvolusi_terakhir.output, self.model.output])
-        
-        # Hitung gradien
-        with tf.GradientTape() as tape:
-            output_konvolusi, prediksi = model_grad(self.input_cnn)
-            loss = prediksi[:, 0]
-        
-        # Ekstrak filter dan gradien
-        output = output_konvolusi[0]
-        grads = tape.gradient(loss, output_konvolusi)[0]
-        
-        # Gabungkan gradien
-        weights = tf.reduce_mean(grads, axis=(0, 1))
-        cam = tf.reduce_sum(tf.multiply(weights, output), axis=-1)
-        
-        # Proses CAM
-        cam = cv2.resize(cam.numpy(), (256, 256))
-        cam = np.maximum(cam, 0)
-        cam = cam / cam.max()
-        
-        # Konversi ke heatmap
-        cam = cv2.applyColorMap(np.uint8(255 * cam), cv2.COLORMAP_JET)
-        self.peta_perhatian = cv2.cvtColor(cam, cv2.COLOR_BGR2RGB)
-        
-        return self.peta_perhatian
+        # Simpan hasil pengukuran dan visualisasi
+        cv2.imwrite('hasil_segmentasi.png', self.mask_luka_akhir)
+        cv2.imwrite('hasil_deteksi.png', overlay)
+        print(f"Hasil segmentasi dan deteksi berhasil disimpan.")
 
-# Contoh penggunaan:
-if __name__ == "__main__":
-    # Inisialisasi analyzer (dengan path model opsional)
-    analyzer = AnalisisLuka(path_model="model_segmentasi_luka.h5")
-    
-    # Jika perlu melatih model:
-    # analyzer.latih_model("path_ke_gambar", "path_ke_mask", epochs=50)
-    
-    # Memuat gambar
-    path_gambar = "Wound_dataset/Abrasions/abrasions (65).jpg"
-    analyzer.muat_gambar(path_gambar)
-    
-    # Praproses
-    analyzer.praproses_gambar()
-    
-    # Kalibrasi (opsional - butuh objek referensi dalam gambar)
-    analyzer.kalibrasi_dengan_referensi()
-    
-    # Segmentasi luka dengan CNN
-    analyzer.segmentasi_luka()
-    
-    # Hitung luas
-    luas_cm2 = analyzer.hitung_luas_luka()
-    print(f"Luas luka: {luas_cm2:.2f} cm²")
-    
-    # Tampilkan hasil
-    analyzer.tampilkan_hasil()
+
+class CombinedLoss(nn.Module):
+    """Kombinasi BCE dan Dice Loss untuk hasil segmentasi yang lebih baik"""
+    def __init__(self, bce_weight=0.5):
+        super(CombinedLoss, self).__init__()
+        self.bce_weight = bce_weight
+        self.bce_loss = nn.BCEWithLogitsLoss()
+        
+    def forward(self, inputs, targets):
+        # Binary Cross Entropy Loss
+        bce_loss = self.bce_loss(inputs, targets)
+        
+        # Dice Loss
+        inputs_sigmoid = torch.sigmoid(inputs)
+        smooth = 1.0
+        
+        intersection = (inputs_sigmoid * targets).sum(dim=(2,3))
+        union = inputs_sigmoid.sum(dim=(2,3)) + targets.sum(dim=(2,3))
+        
+        dice_score = (2. * intersection + smooth) / (union + smooth)
+        dice_loss = 1 - dice_score.mean()
+        
+        # Combined loss
+        loss = self.bce_weight * bce_loss + (1 - self.bce_weight) * dice_loss
+        
+        return loss, dice_score.mean()
