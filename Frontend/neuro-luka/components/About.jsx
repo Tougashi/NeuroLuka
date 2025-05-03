@@ -46,9 +46,9 @@ const About = () => {
           </p>
         </div>
       </div>
-      <div className="flex justify-between items-center px-8 py-12">
-      <h2 className="text-2xl ml-5 font-semibold">Why Choose Us?</h2>
-      <div className="bg-gray-300 p-6 max-w-md mr-5">
+      <div className="grid grid-cols-2 py-12">
+      <h2 className="text-2xl font-semibold px-8 text-center py-10">Why Choose Us?</h2>
+      <div className="bg-gray-300 py-8 px-6 text-left ">
         <p className="text-xl">
           A Complete Solution for Efficient and <br />
           Accurate Wound Management
