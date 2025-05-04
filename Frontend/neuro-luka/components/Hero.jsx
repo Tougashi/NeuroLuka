@@ -30,9 +30,9 @@ const Hero = () => {
               priority
             />
           </div>
-        <div className=" pt-12 ">
+        <div className=" pt-12 mb-4">
           {/* bg-gradient-to-br  from-teal-50  to-white md:w-1/2" */}
-          <h1 className="text-6xl font-semibold text-gray-800 gap-6 mb-2">
+          <h1 className="text-6xl font-semibold text-gray-800 gap-6 mb-8 md:mb-2">
             Ukur Area Luka Kulit 
           </h1>
           {/* <h1 className='text-6xl font-semibold text-gray-800 mb-2'>Luka Kulit</h1> */}

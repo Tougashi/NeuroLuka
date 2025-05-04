@@ -13,7 +13,7 @@ const Navbar = () => {
   }
 
   return (
-    <div className='navbar py-4 shadow-md '>
+    <div className='navbar py-4 shadow-md'>
       <div className="container mx-auto px-6">
         <div className="navbar-box flex items-center justify-between">
           <div className="logo flex gap-4">

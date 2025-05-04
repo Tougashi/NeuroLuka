@@ -4,7 +4,7 @@ import Link from 'next/link'
 const Sosmed = () => {
   return (
     <div className="mx-auto py-10">
-      <div className="flex justify-center gap-80">
+      <div className="flex justify-center md:gap-80 gap-20">
         {/* Facebook Icon */}
         <Link href="https://facebook.com" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
           <svg 
