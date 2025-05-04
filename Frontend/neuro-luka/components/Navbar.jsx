@@ -37,7 +37,7 @@ const Navbar = () => {
           </ul>
           <div className='flex'>
           <div className=' button flex items-center bg-green-900 hover:bg-green-600 px-3 py-0 md:px-5 md:py-3 rounded-3xl text-xs md:text-lg text-white'>
-            <Link href={"#login"}>Masuk</Link>
+            <Link href={"/login"}>Masuk</Link>
           </div>
           
           <div className='md:hidden block' onClick={() => handleClick()}>
