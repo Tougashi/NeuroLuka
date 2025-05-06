@@ -57,11 +57,11 @@ export default function RegisterPage() {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff' }}>
       <div style={{ background: '#fff', borderRadius: '32px', boxShadow: '0 4px 24px rgba(0,0,0,0.15)', padding: '48px 32px', width: '100%', maxWidth: '400px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <h2 style={{ fontWeight: 600, fontSize: '2rem', marginBottom: '32px' }}>Sign Up</h2>
+        <h2 style={{ fontWeight: 600, fontSize: '2rem', marginBottom: '32px', color: '#14532D' }}>Daftar</h2>
         <form onSubmit={handleSubmit} style={{ width: '100%' }}>
           <input
             type="text"
-            placeholder="Name"
+            placeholder="Nama"
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
@@ -79,7 +79,7 @@ export default function RegisterPage() {
           />
           <input
             type="password"
-            placeholder="Password"
+            placeholder="Kata Sandi"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
@@ -96,7 +96,7 @@ export default function RegisterPage() {
             disabled={isLoading}
             style={{ 
               width: '100%', 
-              background: isLoading ? '#cccccc' : '#008080', 
+              background: isLoading ? '#cccccc' : '#14532D', 
               color: '#fff', 
               border: 'none', 
               borderRadius: '24px', 
@@ -108,20 +108,20 @@ export default function RegisterPage() {
               cursor: isLoading ? 'not-allowed' : 'pointer' 
             }}
           >
-            {isLoading ? 'Signing up...' : 'Sign Up'}
+            {isLoading ? 'Sedang mendaftar...' : 'Daftar'}
           </button>
           <Link href="/">
             <button
               type="button"
-              style={{ width: '100%', background: '#eee', color: '#008080', border: 'none', borderRadius: '24px', padding: '12px', fontSize: '1.1rem', fontWeight: 500, marginTop: '8px', cursor: 'pointer', marginBottom: '16px' }}
+              style={{ width: '100%', background: '#eee', color: '#14532D', border: 'none', borderRadius: '24px', padding: '12px', fontSize: '1.1rem', fontWeight: 500, marginTop: '8px', cursor: 'pointer', marginBottom: '16px' }}
             >
               Kembali ke Main Page
             </button>
           </Link>
         </form>
         <div style={{ fontSize: '0.95rem', marginBottom: '16px' }}>
-          Already have an account?{' '}
-          <Link href="/login" style={{ color: '#008080', fontWeight: 600, textDecoration: 'underline' }}>Log in</Link>
+          Sudah punya akun?{' '}
+          <Link href="/login" style={{ color: '#14532D', fontWeight: 600, textDecoration: 'underline' }}>Masuk</Link>
         </div>
       </div>
     </div>

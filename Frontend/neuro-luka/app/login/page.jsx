@@ -48,7 +48,7 @@ export default function LoginPage() {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff' }}>
       <div style={{ background: '#fff', borderRadius: '32px', boxShadow: '0 4px 24px rgba(0,0,0,0.15)', padding: '48px 32px', width: '100%', maxWidth: '400px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <h2 style={{ fontWeight: 600, fontSize: '2rem', marginBottom: '32px' }}>Log in</h2>
+        <h2 style={{ fontWeight: 600, fontSize: '2rem', marginBottom: '32px', color:'#14532D' }}>Masuk</h2>
         <form onSubmit={handleSubmit} style={{ width: '100%' }}>
           <input
             type="email"
@@ -60,7 +60,7 @@ export default function LoginPage() {
           />
           <input
             type="password"
-            placeholder="Password"
+            placeholder="Kata Sandi"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
@@ -72,14 +72,14 @@ export default function LoginPage() {
             </div>
           )}
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '20px' }}>
-            <Link href="/forgot-password" style={{ fontSize: '0.9rem', color: '#444', fontWeight: 500 }}>Forgot Password?</Link>
+            <Link href="/forgot-password" style={{ fontSize: '0.9rem', color: '#444', fontWeight: 500 }}>Lupa Kata Sandi?</Link>
           </div>
           <button 
             type="submit" 
             disabled={isLoading}
             style={{ 
               width: '100%', 
-              background: isLoading ? '#cccccc' : '#008080', 
+              background: isLoading ? '#cccccc' : '#14532D', 
               color: '#fff', 
               border: 'none', 
               borderRadius: '24px', 
@@ -91,20 +91,20 @@ export default function LoginPage() {
               cursor: isLoading ? 'not-allowed' : 'pointer' 
             }}
           >
-            {isLoading ? 'Logging in...' : 'Log in'}
+            {isLoading ? 'Sedang masuk...' : 'Masuk'}
           </button>
           <Link href="/">
             <button
               type="button"
-              style={{ width: '100%', background: '#eee', color: '#008080', border: 'none', borderRadius: '24px', padding: '12px', fontSize: '1.1rem', fontWeight: 500, marginTop: '8px', cursor: 'pointer', marginBottom: '16px' }}
+              style={{ width: '100%', background: '#eee',color:'#14532D' , border: 'none', borderRadius: '24px', padding: '12px', fontSize: '1.1rem', fontWeight: 500, marginTop: '8px', cursor: 'pointer', marginBottom: '16px' }}
             >
-              Kembali ke Main Page
+              Kembali ke Beranda
             </button>
           </Link>
         </form>
         <div style={{ fontSize: '0.95rem', marginBottom: '16px' }}>
-          Don't have an account?{' '}
-          <Link href="/register" style={{ color: '#008080', fontWeight: 600, textDecoration: 'underline' }}>Sign up</Link>
+          Belum punya akun?{' '}
+          <Link href="/register" style={{ color: '#14532D', fontWeight: 600, textDecoration: 'underline' }}>Daftar</Link>
         </div>
       </div>
     </div>

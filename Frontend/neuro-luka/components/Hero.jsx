@@ -32,11 +32,11 @@ const Hero = () => {
           </div>
         <div className=" pt-10 md:pt-12 md:w-1/2 ">
           {/* bg-gradient-to-br  from-teal-50  to-white md:w-1/2" */}
-          <h1 className="text-5xl md:text-6xl font-semibold text-gray-800 gap-6 mb-2">
+          <h1 className="text-5xl md:text-6xl font-semibold text-gray-900 gap-6 mb-2">
             Ukur Area Luka Kulit 
           </h1>
           {/* <h1 className='text-6xl font-semibold text-gray-800 mb-2'>Luka Kulit</h1> */}
-          <h1 className='text-5xl md:text-6xl font-semibold text-gray-800 mb-2'>Otomatis dari Foto</h1>
+          <h1 className='text-5xl md:text-6xl font-semibold text-gray-900 mb-2'>Otomatis dari Foto</h1>
           {/* <h1 className='text-6xl font-semibold text-gray-800 mb-4'>dari Foto</h1> */}
           <div className="space-y-2 md:space-y-4 mb-6 md:mb-0 text-gray-800">
             <p className='text-3xl'>Otomatis mengukur ukuran luka</p>
@@ -86,7 +86,7 @@ const Hero = () => {
             
             <div className="mt-4 flex justify-center">
               <button 
-                className="px-4 py-2 bg-green-900 text-white rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                className="px-4 py-2 bg-green-900 text-white rounded-md hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
                 onClick={() => document.querySelector('input[type="file"]').click()}
               >
                 Unggah Gambar
