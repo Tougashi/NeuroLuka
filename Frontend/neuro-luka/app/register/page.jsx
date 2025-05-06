@@ -1,16 +1,58 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import axios from '@/utils/axios';
+import { useRouter } from 'next/navigation';
 
 export default function RegisterPage() {
+  const router = useRouter();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [isClient, setIsClient] = useState(false);
 
-  const handleSubmit = (e) => {
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // TODO: Implement register logic
+    setIsLoading(true);
+    setError('');
+
+    try {
+      // First, get CSRF cookie
+      await axios.get('/sanctum/csrf-cookie');
+
+      // Then submit registration
+      const response = await axios.post('/api/register', {
+        name,
+        email,
+        password,
+      });
+
+      if (response.data && response.data.message === 'User registered successfully') {
+        router.push('/login');
+      }
+    } catch (err) {
+      console.error('Registration error:', err);
+      if (err.response?.data?.errors) {
+        // Handle validation errors
+        const errorMessages = Object.values(err.response.data.errors).flat();
+        setError(errorMessages.join('\n'));
+      } else {
+        setError(err.response?.data?.message || 'Failed to register. Please try again.');
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  if (!isClient) {
+    return null;
+  }
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff' }}>
@@ -23,6 +65,7 @@ export default function RegisterPage() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
+            name="name"
             style={{ width: '100%', padding: '12px 20px', borderRadius: '24px', border: '1px solid #ccc', marginBottom: '20px', fontSize: '1rem' }}
           />
           <input
@@ -31,6 +74,7 @@ export default function RegisterPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
+            name="email"
             style={{ width: '100%', padding: '12px 20px', borderRadius: '24px', border: '1px solid #ccc', marginBottom: '20px', fontSize: '1rem' }}
           />
           <input
@@ -39,18 +83,41 @@ export default function RegisterPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
+            name="password"
             style={{ width: '100%', padding: '12px 20px', borderRadius: '24px', border: '1px solid #ccc', marginBottom: '20px', fontSize: '1rem' }}
           />
-          <button type="submit" style={{ width: '100%', background: '#008080', color: '#fff', border: 'none', borderRadius: '24px', padding: '12px', fontSize: '1.1rem', fontWeight: 500, boxShadow: '0 4px 8px rgba(0,0,0,0.10)', marginBottom: '16px', cursor: 'pointer' }}>
-            Sign Up
-          </button>
-          <button
-            onClick={() => window.location.href = '/'}
-            type="button"
-            style={{ width: '100%', background: '#eee', color: '#008080', border: 'none', borderRadius: '24px', padding: '12px', fontSize: '1.1rem', fontWeight: 500, marginTop: '8px', cursor: 'pointer', marginBottom: '16px' }}
+          {error && (
+            <div style={{ color: 'red', marginBottom: '20px', textAlign: 'center', whiteSpace: 'pre-line' }}>
+              {error}
+            </div>
+          )}
+          <button 
+            type="submit" 
+            disabled={isLoading}
+            style={{ 
+              width: '100%', 
+              background: isLoading ? '#cccccc' : '#008080', 
+              color: '#fff', 
+              border: 'none', 
+              borderRadius: '24px', 
+              padding: '12px', 
+              fontSize: '1.1rem', 
+              fontWeight: 500, 
+              boxShadow: '0 4px 8px rgba(0,0,0,0.10)', 
+              marginBottom: '16px', 
+              cursor: isLoading ? 'not-allowed' : 'pointer' 
+            }}
           >
-            Kembali ke Main Page
+            {isLoading ? 'Signing up...' : 'Sign Up'}
           </button>
+          <Link href="/">
+            <button
+              type="button"
+              style={{ width: '100%', background: '#eee', color: '#008080', border: 'none', borderRadius: '24px', padding: '12px', fontSize: '1.1rem', fontWeight: 500, marginTop: '8px', cursor: 'pointer', marginBottom: '16px' }}
+            >
+              Kembali ke Main Page
+            </button>
+          </Link>
         </form>
         <div style={{ fontSize: '0.95rem', marginBottom: '16px' }}>
           Already have an account?{' '}
@@ -59,4 +126,4 @@ export default function RegisterPage() {
       </div>
     </div>
   );
-} 
+}
