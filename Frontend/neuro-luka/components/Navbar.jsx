@@ -1,6 +1,7 @@
 'use client'
 import React from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useState } from 'react'
 
 const Navbar = () => {
@@ -17,7 +18,11 @@ const Navbar = () => {
       <div className="container mx-auto px-6">
         <div className="navbar-box flex items-center justify-between">
           <div className="logo flex gap-4">
-            <svg  xmlns="http://www.w3.org/2000/svg" className='w-4 md:w-7' viewBox="0 0 256 414"><path fill="#45ad47" d="M256 75.206V.004h-75.203l-7.505 7.57l-35.485 67.624l-11.158 7.528H0V186h69.626l6.201 7.5L0 338.396V413.6h75.201l7.507-7.567l35.487-67.627l11.156-7.526H256V227.605h-69.626l-6.195-7.551z"/></svg>
+            <Image src='/logo.png'
+            width='50' 
+            height='50'
+            alt='neuro'
+            color='#14532D'/>
             <h1 className='text-gray-900 font-semibold text-lg md:text-3xl flex items-center'>Neuro Luka</h1>
           </div>
           <ul className={`menu flex items-center gap-12 md:static absolute left-1/2 -translate-x-1/2 ${active ? "top-20 opacity-100" : "top-20 opacity-0"} md:-translate-x-0 md:flex-row flex-col md:bg-transparent bg-green-900 w-full md:w-auto md:py-0 py-10 text-white md:text-gray-900 text-lg transition-all md:opacity-100 md:transition-none`}>
