@@ -30,12 +30,17 @@ export default function LoginPage() {
       });
 
       if (response.data) {
-        alert('Login berhasil!');
         router.push('/');
       }
     } catch (err) {
       console.error('Login error:', err);
-      setError(err.response?.data?.message || 'Email atau password salah');
+      if (err.response?.status === 401) {
+        setError('Email atau password tidak sesuai. Silakan coba lagi.');
+      } else if (err.response?.data?.message) {
+        setError(err.response.data.message);
+      } else {
+        setError('Terjadi kesalahan saat login. Silakan coba lagi.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -67,7 +72,7 @@ export default function LoginPage() {
             style={{ width: '100%', padding: '12px 20px', borderRadius: '24px', border: '1px solid #ccc', marginBottom: '8px', fontSize: '1rem' }}
           />
           {error && (
-            <div style={{ color: 'red', marginBottom: '20px', textAlign: 'center' }}>
+            <div style={{ color: 'red', marginBottom: '20px', textAlign: 'center', padding: '10px', backgroundColor: '#FEE2E2', borderRadius: '8px' }}>
               {error}
             </div>
           )}
