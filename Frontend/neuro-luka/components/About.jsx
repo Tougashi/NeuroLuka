@@ -3,13 +3,6 @@ import React from 'react'
 
 const About = () => {
   
-  const steps = [
-    'Unggah Gambar',
-    'AI Mendeteksi Luka',
-    'Hasil Langsung Tersedia',
-    'Pantau Perkembangan (Opsional)'
-  ];
-  
   return (
     <div className=" max-w-6xl mx-auto px-4 py-12 text-center"id='tentang' >
   
@@ -56,35 +49,6 @@ const About = () => {
           </p>
         </div>
       </div>
-  
-      <div>
-        <h1 className='font-semibold text-3xl md:text-5xl text-gray-900'>Bagaimana Cara Kerjanya?</h1>
-      </div>
-  
-      <div className="md:w-6xl mx-auto py-8 px-4">
-        <div className="flex flex-wrap justify-center items-center gap-2">
-          {steps.map((step, index) => (
-            <div key={index} className="flex items-center">
-              <span className="text-sm md:text-2xl font-medium text-gray-900">
-                {step}
-              </span>
-              {index < steps.length - 1 && (
-                <span className="mx-2 text-gray-800">→</span>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-  
-      <div className="grid grid-cols-2 py-12">
-        <h2 className="text-2xl text-gray-900 font-semibold px-8 text-center py-10">Kenapa Harus Kami?</h2>
-        <div className="bg-gray-300 py-8 px-6 text-left">
-          <p className="text-xl">
-            Satu solusi untuk semua — bantu perawatan luka jadi lebih cepat, efisien, dan akurat.
-          </p>
-        </div>
-      </div>
-    
     </div>
   )
 }

@@ -2,9 +2,11 @@ import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import Sosmed from "@/components/Sosmed";
 import About from "@/components/About";
+import Why from "@/components/Why";
 
 import 'remixicon/fonts/remixicon.css';
 import Footer from "@/components/Footer";
+import AboutUs from "@/components/AboutUs";
 
 
 export default function Home() {
@@ -14,6 +16,8 @@ export default function Home() {
       <Hero />
       <Sosmed />
       <About />
+      <Why />
+      <AboutUs />
       <Footer />
       <div className="container mx-auto px-4">
         {/* <h1>Yogi</h1> */}

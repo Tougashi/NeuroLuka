@@ -33,10 +33,10 @@ const Navbar = () => {
               <Link href={"#tentang"}>Tentang</Link>
             </li>
             <li>
-              <Link href={"#service"}>Servis</Link>
+              <Link href={"#bagaimana"}>bagaimana ini bekerja?</Link>
             </li>
             <li>
-              <Link href={"#contact"}>Kontak</Link>
+              <Link href={"#history"}>History</Link>
             </li>
             
           </ul>
