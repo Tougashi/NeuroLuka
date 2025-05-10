@@ -17,11 +17,12 @@ class ResetPasswordNotification extends Notification implements ShouldQueue
      */
     public function __construct(public string $token)
     {
-    }
 
+    }
     /**
      * Get the notification's delivery channels.
      */
+
     public function via($notifiable): array
     {
         return ['mail'];

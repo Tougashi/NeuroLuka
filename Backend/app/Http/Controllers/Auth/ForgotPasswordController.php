@@ -10,6 +10,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
+// <<<<<<< HEAD
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
@@ -104,6 +105,8 @@ class ForgotPasswordController extends Controller
                 'status' => $status
             ]);
 
+// =======
+
             throw ValidationException::withMessages([
                 'email' => [trans($status)]
             ]);
@@ -121,6 +124,7 @@ class ForgotPasswordController extends Controller
 
             return response()->json([
                 'status' => 'error',
+
                 'message' => 'Terjadi kesalahan saat mengirim email reset password.'
             ], 500);
         }
@@ -178,6 +182,7 @@ class ForgotPasswordController extends Controller
             return response()->json([
                 'status' => 'error',
                 'message' => 'Gagal mereset password. ' . $e->getMessage()
+
             ], 500);
         }
     }

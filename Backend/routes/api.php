@@ -8,12 +8,18 @@ use Illuminate\Support\Facades\Mail;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
+// <<<<<<< HEAD
+// =======
+
 
 // Authentication Routes
 Route::post('/register', [RegisteredUserController::class, 'store']);
 Route::post('/login', [AuthenticatedSessionController::class, 'store']);
 Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLinkEmail']);
+// <<<<<<< HEAD
 Route::post('/reset-password', [ForgotPasswordController::class, 'resetPassword']);
+// =======
+
 
 // Protected Routes
 Route::middleware(['auth:sanctum'])->group(function () {
