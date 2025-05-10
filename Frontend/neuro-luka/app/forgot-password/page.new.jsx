@@ -4,12 +4,6 @@ import { useState } from 'react';
 import Link from 'next/link';
 import axios from 'axios';
 
-// Configure axios defaults
-axios.defaults.baseURL = 'http://localhost:8000';
-axios.defaults.withCredentials = true;
-axios.defaults.headers.common['Accept'] = 'application/json';
-axios.defaults.headers.post['Content-Type'] = 'application/json';
-
 export default function ForgotPassword() {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -30,12 +24,11 @@ export default function ForgotPassword() {
       return;
     }
     
-    setIsLoading(true);      
+    setIsLoading(true);
+    
     try {
-      const response = await axios.post('/api/forgot-password', {
+      const response = await axios.post('http://localhost:8000/api/forgot-password', {
         email: email
-      }, {
-        timeout: 30000 // 30 seconds timeout
       });
       
       setMessage({ 
@@ -116,7 +109,6 @@ export default function ForgotPassword() {
                   className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   placeholder="nama@email.com"
                 />
-                
               </div>
             </div>
 
