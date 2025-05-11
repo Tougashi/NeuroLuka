@@ -7,7 +7,7 @@ export default function AboutUs() {
       <div className="max-w-7xl mx-auto bg-white rounded-xl shadow-md overflow-hidden">
         <div className="md:flex">
           <div className="md:w-2/6 p-8">
-            <h1 className="text-5xl font-bold text-gray-900 mb-6">About Us</h1>
+            <h1 className="text-5xl font-bold text-gray-900 mb-6">Tentang Kami</h1>
           </div>
           
           <div className="md:w-4/6 p-8">

@@ -17,7 +17,7 @@ const Hero = () => {
   };
 
   return (
-    <div className="container mx-auto px-0 py-4 md:py-4 rounded-lg overflow-hidden mt-20 md:mt-0">
+    <div className="container beranda mx-auto px-0 py-4 md:py-4 rounded-lg overflow-hidden mt-20 md:mt-0">
       <div className="md:flex md:items-center md:justify-between px-8 md:px-40 pt-0 md:pt-12 min-h-[70vh]">
           <div className="absolute inset-0 -z-10 overflow-hidden">
             {/* Animated Bubbles */}

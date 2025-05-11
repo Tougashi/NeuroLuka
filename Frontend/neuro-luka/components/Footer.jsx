@@ -12,7 +12,7 @@ const Footer = () => {
           <div className="col-span-1 md:col-span-1">
             <h3 className="text-xl font-bold mb-4">Neuro Luka</h3>
             <p className="text-gray-300 mb-4">
-              Providing innovative solutions since 2023. We're committed to excellence and customer satisfaction.
+               Aplikasi yang dirancang untuk membantu tenaga medis dan klien dalam menganalisis luka secara otomatis menggunakan teknologi pemrosesan citra digital dan kecerdasan buatan (AI).
             </p>
             <div className="flex space-x-4">
               {/* Social Media Icons */}
@@ -39,26 +39,26 @@ const Footer = () => {
 
           {/* Quick Links */}
           <div>
-            <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
+            <h3 className="text-lg font-semibold mb-4">Link</h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/" className="text-gray-300 hover:text-white transition duration-150">
-                  Home
+                <Link href="#" className="text-gray-300 hover:text-white transition duration-150">
+                  Beranda
                 </Link>
               </li>
               <li>
-                <Link href="/about" className="text-gray-300 hover:text-white transition duration-150">
-                  About Us
+                <Link href="#tentang" className="text-gray-300 hover:text-white transition duration-150">
+                  Tentang
                 </Link>
               </li>
               <li>
-                <Link href="/services" className="text-gray-300 hover:text-white transition duration-150">
-                  Services
+                <Link href="#" className="text-gray-300 hover:text-white transition duration-150">
+                  Cara Kerja
                 </Link>
               </li>
               <li>
-                <Link href="/contact" className="text-gray-300 hover:text-white transition duration-150">
-                  Contact
+                <Link href="#" className="text-gray-300 hover:text-white transition duration-150">
+                  Riwayat
                 </Link>
               </li>
             </ul>
@@ -93,7 +93,7 @@ const Footer = () => {
 
           {/* Contact Info */}
           <div>
-            <h3 className="text-lg font-semibold mb-4">Contact Us</h3>
+            <h3 className="text-lg font-semibold mb-4">Kontak</h3>
             <address className="not-italic">
               <p className="flex items-start mb-2">
                 <svg className="h-5 w-5 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -113,7 +113,7 @@ const Footer = () => {
                 <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
                 </svg>
-                info@yourcompany.com
+                neuroluka@gmail.com
               </p>
             </address>
           </div>
