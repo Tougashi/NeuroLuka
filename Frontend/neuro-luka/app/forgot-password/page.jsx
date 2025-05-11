@@ -2,13 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import axios from 'axios';
-
-// Configure axios defaults
-axios.defaults.baseURL = 'http://localhost:8000';
-axios.defaults.withCredentials = true;
-axios.defaults.headers.common['Accept'] = 'application/json';
-axios.defaults.headers.post['Content-Type'] = 'application/json';
+import axios from '@/utils/axios';
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('');
@@ -28,14 +22,16 @@ export default function ForgotPassword() {
         text: 'Masukkan alamat email yang valid' 
       });
       return;
-    }
-    
-    setIsLoading(true);      
+    }      setIsLoading(true);      
     try {
       const response = await axios.post('/api/forgot-password', {
         email: email
       }, {
-        timeout: 30000 // 30 seconds timeout
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
       });
       
       setMessage({ 
@@ -44,13 +40,12 @@ export default function ForgotPassword() {
       });
       
       // Reset form
-      setEmail('');
-    } catch (error) {
+      setEmail('');    } catch (error) {
+      console.error('Error details:', error);
       setMessage({ 
         type: 'error', 
-        text: error.response?.data?.message || 'Terjadi kesalahan saat mengirim permintaan. Silakan coba lagi.'
+        text: error.response?.data?.message || error.message || 'Terjadi kesalahan saat mengirim permintaan. Silakan coba lagi.'
       });
-      console.error('Error:', error);
     } finally {
       setIsLoading(false);
     }

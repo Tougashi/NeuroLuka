@@ -7,7 +7,17 @@ const instance = axios.create({
         'Content-Type': 'application/json',
         'Accept': 'application/json'
     },
-    withCredentials: true
+    withCredentials: true,
+    timeout: 10000
 });
+
+// Add response interceptor for better error handling
+instance.interceptors.response.use(
+    response => response,
+    error => {
+        console.error('API Error:', error.response || error);
+        return Promise.reject(error);
+    }
+);
 
 export default instance;
