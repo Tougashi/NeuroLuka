@@ -2,15 +2,37 @@
 import React from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import axios from '@/utils/axios'
 
 const Navbar = () => {
-
   const [active, setActive] = useState(false);
-  console.log(active)
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        await axios.get('/api/user');
+        setIsAuthenticated(true);
+      } catch (error) {
+        setIsAuthenticated(false);
+      }
+    };
+    
+    checkAuth();
+  }, []);
 
   const handleClick = () => {
     setActive(!active)
+  }
+
+  const handleRiwayatClick = (e) => {
+    if (!isAuthenticated) {
+      e.preventDefault();
+      router.push('/login');
+    }
   }
 
   return (
@@ -33,12 +55,11 @@ const Navbar = () => {
               <Link href={"#tentang"}>Tentang</Link>
             </li>
             <li>
-              <Link href={"#bagaimana"}>bagaimana ini bekerja?</Link>
+              <Link href={"#cara-kerja"}>Cara Kerja</Link>
             </li>
             <li>
-              <Link href={"#history"}>History</Link>
+              <Link href={"/riwayat"} onClick={handleRiwayatClick}>Riwayat</Link>
             </li>
-            
           </ul>
           <div className='flex'>
           <div className=' button flex items-center bg-green-900 hover:bg-green-800 px-3 py-0 md:px-5 md:py-3 rounded-3xl text-xs md:text-lg text-white'>

@@ -1,6 +1,5 @@
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
-import Sosmed from "@/components/Sosmed";
 import About from "@/components/About";
 import Why from "@/components/Why";
 
@@ -14,7 +13,6 @@ export default function Home() {
     <>
       <Navbar />
       <Hero />
-      <Sosmed />
       <About />
       <Why />
       <AboutUs />
