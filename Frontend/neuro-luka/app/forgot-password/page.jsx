@@ -36,7 +36,7 @@ export default function ForgotPassword() {
       
       setMessage({ 
         type: 'success', 
-        text: response.data.message || 'Link reset password telah dikirim ke email Anda. Silakan periksa kotak masuk Anda.'
+        text: response.data.message || 'Link reset kata sandi telah dikirim ke email Anda. Silakan periksa kotak masuk Anda.'
       });
       
       // Reset form
@@ -73,7 +73,7 @@ export default function ForgotPassword() {
           </div>
         </div>
         <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          Lupa Password?
+          Lupa Kata Sandi?
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600">
           Masukkan alamat email Anda dan kami akan mengirimkan link untuk mengatur ulang password Anda.
