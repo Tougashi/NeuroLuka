@@ -49,10 +49,10 @@ const Navbar = () => {
           </div>
           <ul className={`menu flex items-center gap-12 md:static absolute left-1/2 -translate-x-1/2 ${active ? "top-20 opacity-100" : "top-20 opacity-0"} md:-translate-x-0 md:flex-row flex-col md:bg-transparent bg-green-900 w-full md:w-auto md:py-0 py-10 text-white md:text-gray-900 text-lg transition-all md:opacity-100 md:transition-none`}>
             <li>
-              <Link href={"#"}>Beranda</Link>
+              <Link href={"/#hero"}>Beranda</Link>
             </li>
             <li>
-              <Link href={"#tentang"}>Tentang</Link>
+              <Link href={"/#tentang"}>Tentang</Link>
             </li>
             <li>
               <Link href={"/analys"}>Cara Kerja</Link>
