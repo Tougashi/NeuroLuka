@@ -27,10 +27,8 @@ export default function LoginPage() {
       const response = await axios.post('/api/login', {
         email,
         password
-      });
-
-      if (response.data) {
-        router.push('/');
+      });      if (response.data) {
+        window.location.href = '/';  // Using window.location for full page refresh
       }
     } catch (err) {
       console.error('Login error:', err);

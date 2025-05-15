@@ -16,15 +16,20 @@ use App\Http\Controllers\Auth\ForgotPasswordController;
 Route::post('/register', [RegisteredUserController::class, 'store']);
 Route::post('/login', [AuthenticatedSessionController::class, 'store']);
 Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLinkEmail']);
-// <<<<<<< HEAD
 Route::post('/reset-password', [ForgotPasswordController::class, 'resetPassword']);
-// =======
-
 
 // Protected Routes
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/user', function (Request $request) {
         return $request->user();
+    });
+    Route::post('/logout', [AuthenticatedSessionController::class, 'destroy']);
+
+    // Additional protected routes
+    Route::middleware(['checkauth'])->group(function () {
+        Route::get('/analys', function () {
+            return response()->json(['message' => 'Protected route']);
+        });
     });
 });
 

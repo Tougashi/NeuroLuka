@@ -20,7 +20,7 @@ const Navbar = () => {
         setIsAuthenticated(false);
       }
     };
-    
+
     checkAuth();
   }, []);
 
@@ -41,7 +41,7 @@ const Navbar = () => {
         <div className="navbar-box flex items-center justify-between">
           <div className="logo flex gap-4">
             <Image src='/logo.png'
-            width='50' 
+            width='50'
             height='50'
             alt='neuro'
             color='#14532D'/>
@@ -60,12 +60,23 @@ const Navbar = () => {
             <li>
               <Link href={"/riwayat"} onClick={handleRiwayatClick}>Riwayat</Link>
             </li>
-          </ul>
-          <div className='flex'>
-          <div className=' button flex items-center bg-green-900 hover:bg-green-800 px-3 py-0 md:px-5 md:py-3 rounded-3xl text-xs md:text-lg text-white'>
-            <Link href={"/login"}>Masuk</Link>
+          </ul>          <div className='flex'>
+          <div className='button flex items-center bg-green-900 hover:bg-green-800 px-3 py-0 md:px-5 md:py-3 rounded-3xl text-xs md:text-lg text-white'>
+            {isAuthenticated ? (
+              <button onClick={async () => {
+                try {
+                  await axios.post('/api/logout');
+                  setIsAuthenticated(false);
+                  router.push('/login');
+                } catch (error) {
+                  console.error('Logout error:', error);
+                }
+              }}>Keluar</button>
+            ) : (
+              <Link href={"/login"}>Masuk</Link>
+            )}
           </div>
-          
+
           <div className='md:hidden block' onClick={() => handleClick()}>
             <i className="ri-menu-3-line ri-2x font-bold"></i>
           </div>
