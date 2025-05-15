@@ -3,6 +3,7 @@
 import React from 'react'
 import { useState } from 'react';
 import Image from 'next/image';
+import { useRouter, router } from 'next/navigation';
 
 const Hero = () => {
   const [image, setImage] = useState(null);
@@ -11,8 +12,13 @@ const Hero = () => {
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
+      const previewUrl = URL.createObjectURL(file);
       setImage(file);
-      setPreview(URL.createObjectURL(file));
+      setPreview(previewUrl);
+      localStorage.setItem('uploadedImage', previewUrl);
+      setTimeout(() => {
+        router.push('/analys');
+      }, 1000); // Delay kecil biar UX-nya smooth
     }
   };
 

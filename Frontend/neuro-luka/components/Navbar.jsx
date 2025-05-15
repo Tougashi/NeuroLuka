@@ -55,7 +55,7 @@ const Navbar = () => {
               <Link href={"#tentang"}>Tentang</Link>
             </li>
             <li>
-              <Link href={"#cara-kerja"}>Cara Kerja</Link>
+              <Link href={"/analys"}>Cara Kerja</Link>
             </li>
             <li>
               <Link href={"/riwayat"} onClick={handleRiwayatClick}>Riwayat</Link>
