@@ -3,11 +3,13 @@
 import React from 'react'
 import { useState } from 'react';
 import Image from 'next/image';
-import { useRouter, router } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 
 const Hero = () => {
   const [image, setImage] = useState(null);
   const [preview, setPreview] = useState(null);
+  const router = useRouter(); 
+  const [isLoading, setIsLoading] = useState(false);
   
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
@@ -16,11 +18,13 @@ const Hero = () => {
       setImage(file);
       setPreview(previewUrl);
       localStorage.setItem('uploadedImage', previewUrl);
+       setIsLoading(true);
       setTimeout(() => {
         router.push('/analys');
-      }, 1000); // Delay kecil biar UX-nya smooth
+      },5000); // Delay kecil biar UX-nya smooth
     }
   };
+   
 
   return (
     <div id='hero' className="container beranda mx-auto px-0 py-4 md:py-4 rounded-lg overflow-hidden mt-20 md:mt-0">
@@ -89,13 +93,22 @@ const Hero = () => {
             )}
             
             <div className="mt-4 flex justify-center">
-              <button 
+              <button
                 className="px-4 py-2 bg-green-900 text-white rounded-md hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
                 onClick={() => document.querySelector('input[type="file"]').click()}
               >
                 Unggah Gambar
               </button>
             </div>
+            {isLoading && (
+              <div className="flex justify-center items-center mt-4 text-gray-700">
+                <svg className="animate-spin h-5 w-5 mr-2 text-green-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                </svg>
+                <span>Menganalisis gambar...</span>
+              </div>
+              )}
           </div>
         </div>
       </div>
