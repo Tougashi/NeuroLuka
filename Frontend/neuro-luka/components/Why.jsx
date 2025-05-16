@@ -66,36 +66,49 @@ export default function Why() {
   ];
 
   return (
-    <div className="w-full max-w-6xl mx-auto py-12 px-4">
-      {/* Header Section */}
-      <div className="text-center mb-12">
-        <h2 className="text-5xl font-bold text-gray-900 mb-4">Kenapa Harus Pilih Kami</h2>
-        <p className="text-gray-900 max-w-2xl text-2xl mx-auto">
-          Solusi pengukur luka digital terbaik untuk kebutuhan medis dan perawatan pasien Anda
-        </p>
-      </div>
+    <section className="py-20 bg-gradient-to-b from-white to-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header Section */}
+        <div className="text-center mb-16">
+          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6 leading-tight">
+            Kenapa Harus Pilih Kami
+          </h2>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+            Solusi pengukur luka digital terbaik untuk kebutuhan medis dan perawatan pasien Anda
+          </p>
+        </div>
 
-      {/* Features Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-        {features.map((feature, index) => (
-          <div key={index} className="flex flex-col items-center text-center">
-            <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-4">
-              <div className="w-10 h-10 text-green-900">
-                {feature.icon()}
+        {/* Features Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {features.map((feature, index) => (
+            <div 
+              key={index} 
+              className="group bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
+            >
+              <div className="flex flex-col items-center text-center">
+                <div className="w-16 h-16 rounded-2xl bg-green-50 flex items-center justify-center mb-6 group-hover:bg-green-100 transition-colors duration-300">
+                  <div className="w-10 h-10 text-green-600">
+                    {feature.icon()}
+                  </div>
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-4 group-hover:text-green-700 transition-colors duration-300">
+                  {feature.title}
+                </h3>
+                <p className="text-gray-600 text-lg leading-relaxed">
+                  {feature.description}
+                </p>
               </div>
             </div>
-            <h3 className="font-bold text-2xl text-gray-900 mb-2">{feature.title}</h3>
-            <p className="text-gray-900 text-lg">{feature.description}</p>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
 
-      {/* Footer Note */}
-      <div className="text-center mt-10">
-        <p className="text-gray-900 text-sm">
-          Tingkatkan kualitas perawatan luka dengan teknologi pengukuran digital kami
-        </p>
+        {/* Footer Note */}
+        <div className="text-center mt-16">
+          <p className="text-gray-600 text-lg font-medium">
+            Tingkatkan kualitas perawatan luka dengan teknologi pengukuran digital kami
+          </p>
+        </div>
       </div>
-    </div>
+    </section>
   );
 }

@@ -17,7 +17,9 @@ const Navbar = () => {
         await axios.get('/api/user');
         setIsAuthenticated(true);
       } catch (error) {
-        setIsAuthenticated(false);
+        if (error.response?.status === 401) {
+          setIsAuthenticated(false);
+        }
       }
     };
 
@@ -36,7 +38,7 @@ const Navbar = () => {
   }
 
   return (
-    <div className='navbar py-4 shadow-md sticky top-0 bg-white'>
+    <div className='navbar py-4 shadow-md sticky top-0 bg-white z-100'>
       <div className="container mx-auto px-6">
         <div className="navbar-box flex items-center justify-between">
           <div className="logo flex gap-4">
@@ -49,13 +51,13 @@ const Navbar = () => {
           </div>
           <ul className={`menu flex items-center gap-12 md:static absolute left-1/2 -translate-x-1/2 ${active ? "top-20 opacity-100" : "top-20 opacity-0"} md:-translate-x-0 md:flex-row flex-col md:bg-transparent bg-green-900 w-full md:w-auto md:py-0 py-10 text-white md:text-gray-900 text-lg transition-all md:opacity-100 md:transition-none`}>
             <li>
-              <Link href={"/#hero"}>Beranda</Link>
+              <Link href={"/"}>Beranda</Link>
             </li>
             <li>
               <Link href={"/#tentang"}>Tentang</Link>
             </li>
             <li>
-              <Link href={"/analys"}>Cara Kerja</Link>
+              <Link href={"/#cara-kerja"}>Cara Kerja</Link>
             </li>
             <li>
               <Link href={"/riwayat"} onClick={handleRiwayatClick}>Riwayat</Link>

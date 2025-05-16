@@ -15,7 +15,10 @@ const instance = axios.create({
 instance.interceptors.response.use(
     response => response,
     error => {
-        console.error('API Error:', error.response || error);
+        // Don't log 401 errors as they are expected for unauthenticated users
+        if (error.response?.status !== 401) {
+            console.error('API Error:', error.response || error);
+        }
         return Promise.reject(error);
     }
 );
