@@ -51,7 +51,7 @@ export default function LoginPage() {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff' }}>
       <div style={{ background: '#fff', borderRadius: '32px', boxShadow: '0 4px 24px rgba(0,0,0,0.15)', padding: '48px 32px', width: '100%', maxWidth: '400px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <h2 style={{ fontWeight: 600, fontSize: '2rem', marginBottom: '32px', color:'#14532D' }}>Masuk</h2>
+        <h2 style={{ fontWeight: 600, fontSize: '2rem', marginBottom: '32px', color:'#16a34a' }}>Masuk</h2>
         <form onSubmit={handleSubmit} style={{ width: '100%' }}>
           <input
             type="email"
@@ -82,7 +82,7 @@ export default function LoginPage() {
             disabled={isLoading}
             style={{ 
               width: '100%', 
-              background: isLoading ? '#cccccc' : '#14532D', 
+              background: isLoading ? '#cccccc' : '#16a34a', 
               color: '#fff', 
               border: 'none', 
               borderRadius: '24px', 
@@ -99,7 +99,7 @@ export default function LoginPage() {
           <Link href="/">
             <button
               type="button"
-              style={{ width: '100%', background: '#eee',color:'#14532D' , border: 'none', borderRadius: '24px', padding: '12px', fontSize: '1.1rem', fontWeight: 500, marginTop: '8px', cursor: 'pointer', marginBottom: '16px' }}
+              style={{ width: '100%', background: '#eee',color:'#16a34a' , border: 'none', borderRadius: '24px', padding: '12px', fontSize: '1.1rem', fontWeight: 500, marginTop: '8px', cursor: 'pointer', marginBottom: '16px' }}
             >
               Kembali ke Beranda
             </button>
@@ -107,7 +107,7 @@ export default function LoginPage() {
         </form>
         <div style={{ fontSize: '0.95rem', marginBottom: '16px' }}>
           Belum punya akun?{' '}
-          <Link href="/register" style={{ color: '#14532D', fontWeight: 600, textDecoration: 'underline' }}>Daftar</Link>
+          <Link href="/register" style={{ color: '#16a34a', fontWeight: 600, textDecoration: 'underline' }}>Daftar</Link>
         </div>
       </div>
     </div>

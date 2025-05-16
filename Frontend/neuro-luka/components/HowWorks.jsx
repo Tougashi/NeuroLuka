@@ -78,7 +78,7 @@ const HowWorks = () => {
 
         <div className="text-center mt-16">
           <Link
-            href="/analis"
+            href="/analisis"
             className="inline-flex items-center bg-green-600 text-white px-8 py-4 rounded-xl hover:bg-green-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl font-medium text-lg"
           >
             Mulai Analisis

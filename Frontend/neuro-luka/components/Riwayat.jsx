@@ -110,7 +110,7 @@ const Riwayat = () => {
               </div>
 
               <button
-                onClick={() => router.push(`/analis/${item.id}`)}
+                onClick={() => router.push(`/analisis/${item.id}`)}
                 className="w-full bg-green-900 text-white py-2 px-4 rounded-lg hover:bg-green-800 transition-colors"
               >
                 Lihat Detail

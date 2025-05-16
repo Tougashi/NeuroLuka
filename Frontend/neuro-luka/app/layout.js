@@ -1,5 +1,6 @@
 import { Poppins } from "next/font/google";
 import "./globals.css";
+import { Providers } from "./providers";
 
 const fontPoppins = Poppins ({
   subsets: ["latin"],
@@ -15,7 +16,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className={`${fontPoppins.className}  antialiased`}>
-        {children}
+        <Providers>{children}</Providers>
       </body>
     </html>
   );
