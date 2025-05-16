@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Navbar from '@/components/Navbar';
 import { useSession } from 'next-auth/react';
 import { useDropzone } from 'react-dropzone';
+import axios from '@/utils/axios';
 
 export default function WoundAnalysis() {
   const { data: session } = useSession();
@@ -23,15 +24,29 @@ export default function WoundAnalysis() {
       setError(null);
     }
   }, []);
-
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
-      'image/*': ['.jpeg', '.jpg', '.png', '.gif']
+      'image/jpeg': ['.jpeg', '.jpg'],
+      'image/jpg': ['.jpg'],
+      'image/pjpeg': ['.jpg'],
+      'image/png': ['.png'],
+      'image/gif': ['.gif']
     },
     maxFiles: 1,
     multiple: false
-  });
+  });  const validateImage = (file) => {
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/pjpeg', 'image/png', 'image/gif'];
+
+    if (!allowedTypes.includes(file.type)) {
+      throw new Error('Format file tidak didukung. Gunakan JPEG, JPG, PNG, atau GIF.');
+    }
+
+    if (file.size > maxSize) {
+      throw new Error('Ukuran file terlalu besar. Maksimal 5MB.');
+    }
+  };
 
   const analyzeImage = async () => {
     if (!image) {
@@ -39,50 +54,71 @@ export default function WoundAnalysis() {
       return;
     }
 
+    try {
+      validateImage(image);
+    } catch (validationError) {
+      setError(validationError.message);
+      return;
+    }
+
     setIsAnalyzing(true);
     setError(null);
 
     try {
-      const formData = new FormData();
-      formData.append('image', image);
+      // Get CSRF token first
+      await axios.get('/sanctum/csrf-cookie');      const formDataLaravel = new FormData();
+      formDataLaravel.append('image', image);
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/analyze`, {
-        method: 'POST',
+      // Send to Laravel backend
+      const uploadResponse = await axios.post('/api/analyze', formDataLaravel, {
         headers: {
-          'Accept': 'application/json',
-        },
-        credentials: 'include',
-        body: formData,
+          'Content-Type': 'multipart/form-data',
+        }
       });
 
-      if (!response.ok) {
+      if (!uploadResponse.data.success) {
+        throw new Error(uploadResponse.data.message || 'Gagal mengunggah gambar');
+      }
+
+      const uploadResult = uploadResponse.data;      // Send to FastAPI service for analysis
+      const formDataFastAPI = new FormData();
+      // Create a new file with the correct mime type
+      const newFile = new File([image], image.name, { type: image.type });
+      formDataFastAPI.append('file', newFile);
+
+      const analysisResponse = await axios.post('http://localhost:8090/predict', formDataFastAPI, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        }
+      });
+
+      if (!analysisResponse.data) {
         throw new Error('Gagal menganalisis gambar');
       }
 
-      const result = await response.json();
+      const analysisResult = analysisResponse.data;
+
+      // Combine results
+      const result = {
+        ...analysisResult,
+        image_url: uploadResult.image_url,
+      };
+
       setAnalysisResult(result);
 
-      // Jika user login, simpan ke riwayat
+      // Save to history if user is logged in
       if (session?.user) {
         try {
-          await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/history`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-            },
-            credentials: 'include',
-            body: JSON.stringify({
-              image_url: preview,
-              analysis_result: result
-            }),
+          await axios.post('/api/history', {
+            image_url: preview,
+            analysis_result: result
           });
         } catch (error) {
           console.error('Gagal menyimpan riwayat:', error);
         }
       }
     } catch (error) {
-      setError(error.message);
+      setError(error.response?.data?.message || error.message);
     } finally {
       setIsAnalyzing(false);
     }
@@ -99,11 +135,11 @@ export default function WoundAnalysis() {
           </div>
 
           <div className="bg-white rounded-2xl shadow-xl p-8 mb-8">
-            <div 
-              {...getRootProps()} 
+            <div
+              {...getRootProps()}
               className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all duration-200 ${
-                isDragActive 
-                  ? 'border-green-500 bg-green-50' 
+                isDragActive
+                  ? 'border-green-500 bg-green-50'
                   : 'border-gray-300 hover:border-green-400 hover:bg-gray-50'
               }`}
             >
@@ -181,25 +217,51 @@ export default function WoundAnalysis() {
               </div>
             )}
 
-            {analysisResult && (
+      {analysisResult && (
               <div className="mt-8 p-6 bg-gray-50 rounded-xl">
                 <h2 className="text-2xl font-semibold text-gray-900 mb-6">Hasil Analisis</h2>
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="bg-white p-4 rounded-lg shadow-sm">
                     <h3 className="text-sm font-medium text-gray-500 mb-2">Ukuran Luka</h3>
-                    <p className="text-xl font-semibold text-gray-900">{analysisResult.size}</p>
+                    <div className="text-xl font-semibold text-gray-900">
+                      <span>{analysisResult.area_cm2} cm²</span>
+                      <span className="mx-2">×</span>
+                      <span>{analysisResult.perimeter_cm} cm</span>
+                    </div>
+                    <p className="text-sm text-gray-500 mt-1">Area × Perimeter</p>
                   </div>
                   <div className="bg-white p-4 rounded-lg shadow-sm">
-                    <h3 className="text-sm font-medium text-gray-500 mb-2">Waktu Pemulihan</h3>
-                    <p className="text-xl font-semibold text-gray-900">{analysisResult.recoveryTime}</p>
+                    <h3 className="text-sm font-medium text-gray-500 mb-2">Estimasi Waktu Pemulihan</h3>
+                    <p className="text-xl font-semibold text-gray-900">{analysisResult.estimated_recovery_time}</p>
+                    <p className="text-sm text-gray-500 mt-1">Berdasarkan ukuran dan kondisi luka</p>
                   </div>
                   <div className="md:col-span-2 bg-white p-4 rounded-lg shadow-sm">
-                    <h3 className="text-sm font-medium text-gray-500 mb-2">Tahap Penyembuhan</h3>
-                    <p className="text-gray-700">{analysisResult.healingProgress}</p>
+                    <h3 className="text-sm font-medium text-gray-500 mb-2">Analisis Jaringan</h3>
+                    <div className="mt-2 space-y-2">
+                      {analysisResult.tissue_analysis && Object.entries(analysisResult.tissue_analysis).map(([tissue, percentage]) => (
+                        <div key={tissue} className="flex items-center">
+                          <div className="w-full bg-gray-200 rounded-full h-2.5">
+                            <div
+                              className="bg-green-600 h-2.5 rounded-full"
+                              style={{ width: `${percentage}%` }}
+                            />
+                          </div>
+                          <span className="ml-4 w-24 text-sm text-gray-600">
+                            {tissue}: {percentage}%
+                          </span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                   <div className="md:col-span-2 bg-white p-4 rounded-lg shadow-sm">
-                    <h3 className="text-sm font-medium text-gray-500 mb-2">Rekomendasi</h3>
-                    <p className="text-gray-700">{analysisResult.recommendation}</p>
+                    <h3 className="text-sm font-medium text-gray-500 mb-2">Rekomendasi Perawatan</h3>
+                    <div className="prose prose-sm max-w-none">
+                      <ul className="list-disc pl-4 text-gray-700 space-y-1">
+                        {analysisResult.recommendations?.map((rec, index) => (
+                          <li key={index}>{rec}</li>
+                        ))}
+                      </ul>
+                    </div>
                   </div>
                 </div>
               </div>

@@ -13,12 +13,13 @@ return new class extends Migration
     {
         Schema::create('wound_records', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('patient_id')->constrained('patients')->onDelete('cascade');
-            $table->string('image_path', 255);
-            $table->decimal('predicted_area_cm2', 8, 2);
-            $table->string('wound_type', 50)->nullable();
+            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+            $table->string('original_image', 255);
+            $table->string('segmentation_image', 255);
+            $table->decimal('area_cm2', 8, 2);
+            $table->decimal('confidence', 5, 2)->nullable();
             $table->text('note')->nullable();
-            $table->dateTime('scanned_at');
+            $table->dateTime('analyzed_at');
             $table->timestamps();
         });
     }
