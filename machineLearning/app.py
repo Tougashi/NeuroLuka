@@ -79,6 +79,39 @@ async def predict_wound(file: UploadFile):
         area_cm2 = analyzer.hitung_luas_luka()
         print(f"Calculated area: {area_cm2:.2f} cm²")
         
+        # Analyze wound color and tissue condition
+        wound_region = cv2.bitwise_and(image_np, image_np, mask=analyzer.mask_luka_akhir.astype(np.uint8))
+        wound_hsv = cv2.cvtColor(wound_region, cv2.COLOR_BGR2HSV)
+        
+        # Calculate average color in wound region
+        wound_colors = wound_hsv[analyzer.mask_luka_akhir > 0]
+        if len(wound_colors) > 0:
+            avg_hue = np.mean(wound_colors[:, 0])
+            avg_saturation = np.mean(wound_colors[:, 1])
+            avg_value = np.mean(wound_colors[:, 2])
+            
+            # Analyze tissue condition based on color
+            if avg_value < 60:  # Dark
+                tissue_condition = "Jaringan nekrotik (perlu debridement)"
+                condition_factor = 2.0
+            elif avg_saturation > 150 and avg_value > 150:  # Bright red
+                tissue_condition = "Jaringan granulasi (penyembuhan aktif)"
+                condition_factor = 1.0
+            else:  # Yellow/pale
+                tissue_condition = "Jaringan fibrin (perlu perawatan khusus)"
+                condition_factor = 1.5
+            
+            # Calculate recovery time estimation
+            base_recovery_days = max(7, area_cm2 * 2)  # Minimal 1 minggu, tambah 2 hari per cm²
+            total_recovery_days = base_recovery_days * condition_factor
+            
+            area_recovery_time = f"{base_recovery_days:.0f} hari"
+            total_recovery_time = f"{total_recovery_days:.0f} hari"
+        else:
+            tissue_condition = "Tidak dapat menentukan kondisi jaringan"
+            area_recovery_time = "Tidak dapat ditentukan"
+            total_recovery_time = "Tidak dapat ditentukan"
+            
         # Create visualization
         h, w = image_np.shape[:2]
         
@@ -120,14 +153,17 @@ async def predict_wound(file: UploadFile):
         # Calculate confidence as mean probability in wound region
         if hasattr(analyzer, 'mask_luka_akhir') and np.any(analyzer.mask_luka_akhir > 0):
             confidence = float(np.mean(analyzer.mask_luka_akhir[analyzer.mask_luka_akhir > 0]))
-        else:
-            confidence = 0.0
-
+        else:            confidence = 0.0
+            
         print(f"Analysis complete - Area: {area_cm2:.2f} cm2, Confidence: {confidence:.2%}")
+        
         return {
             "area_cm2": float(area_cm2),
             "segmentation_image": img_str,
-            "confidence": confidence
+            "confidence": confidence,
+            "tissue_condition": tissue_condition,
+            "area_recovery_time": area_recovery_time,
+            "total_recovery_time": total_recovery_time
         }
 
     except Exception as e:

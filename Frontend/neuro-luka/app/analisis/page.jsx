@@ -221,20 +221,21 @@ export default function WoundAnalysis() {
               <div className="mt-8 p-6 bg-gray-50 rounded-xl">
                 <h2 className="text-2xl font-semibold text-gray-900 mb-6">Hasil Analisis</h2>
                 <div className="grid md:grid-cols-2 gap-6">
-                  <div className="bg-white p-4 rounded-lg shadow-sm">
-                    <h3 className="text-sm font-medium text-gray-500 mb-2">Ukuran Luka</h3>
+                  <div className="bg-white p-4 rounded-lg shadow-sm">                    <h3 className="text-sm font-medium text-gray-500 mb-2">Ukuran Luka</h3>
                     <div className="text-xl font-semibold text-gray-900">
-                      <span>{analysisResult.area_cm2} cm²</span>
-                      <span className="mx-2">×</span>
-                      <span>{analysisResult.perimeter_cm} cm</span>
+                      <span>{Number(analysisResult.area_cm2).toFixed(2)} cm²</span>
                     </div>
-                    <p className="text-sm text-gray-500 mt-1">Area × Perimeter</p>
-                  </div>
-                  <div className="bg-white p-4 rounded-lg shadow-sm">
+                    <p className="text-sm text-gray-500 mt-1">Area</p>
+                  </div>                  <div className="bg-white p-4 rounded-lg shadow-sm">
                     <h3 className="text-sm font-medium text-gray-500 mb-2">Estimasi Waktu Pemulihan</h3>
-                    <p className="text-xl font-semibold text-gray-900">{analysisResult.estimated_recovery_time}</p>
-                    <p className="text-sm text-gray-500 mt-1">Berdasarkan ukuran dan kondisi luka</p>
-                  </div>                  <div className="md:col-span-2 bg-white p-4 rounded-lg shadow-sm">
+                    <p className="text-xl font-semibold text-gray-900">{analysisResult.estimated_recovery_time}</p>                    <div className="mt-2 space-y-1 text-sm text-gray-600">
+                      <p>• Berdasarkan luas: {analysisResult.area_recovery_time}</p>
+                      {analysisResult.tissue_condition && (
+                        <p>• Kondisi jaringan: {analysisResult.tissue_condition}</p>
+                      )}
+                      <p>• Total estimasi: {analysisResult.total_recovery_time}</p>
+                    </div>
+                  </div><div className="md:col-span-2 bg-white p-4 rounded-lg shadow-sm">
                     <h3 className="text-sm font-medium text-gray-500 mb-2">Segmentasi Luka</h3>
                     <div className="mt-2 relative h-80 w-full">
                       {analysisResult.segmentation_image && (
