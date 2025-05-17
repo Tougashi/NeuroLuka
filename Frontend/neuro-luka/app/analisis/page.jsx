@@ -234,23 +234,17 @@ export default function WoundAnalysis() {
                     <h3 className="text-sm font-medium text-gray-500 mb-2">Estimasi Waktu Pemulihan</h3>
                     <p className="text-xl font-semibold text-gray-900">{analysisResult.estimated_recovery_time}</p>
                     <p className="text-sm text-gray-500 mt-1">Berdasarkan ukuran dan kondisi luka</p>
-                  </div>
-                  <div className="md:col-span-2 bg-white p-4 rounded-lg shadow-sm">
-                    <h3 className="text-sm font-medium text-gray-500 mb-2">Analisis Jaringan</h3>
-                    <div className="mt-2 space-y-2">
-                      {analysisResult.tissue_analysis && Object.entries(analysisResult.tissue_analysis).map(([tissue, percentage]) => (
-                        <div key={tissue} className="flex items-center">
-                          <div className="w-full bg-gray-200 rounded-full h-2.5">
-                            <div
-                              className="bg-green-600 h-2.5 rounded-full"
-                              style={{ width: `${percentage}%` }}
-                            />
-                          </div>
-                          <span className="ml-4 w-24 text-sm text-gray-600">
-                            {tissue}: {percentage}%
-                          </span>
-                        </div>
-                      ))}
+                  </div>                  <div className="md:col-span-2 bg-white p-4 rounded-lg shadow-sm">
+                    <h3 className="text-sm font-medium text-gray-500 mb-2">Segmentasi Luka</h3>
+                    <div className="mt-2 relative h-80 w-full">
+                      {analysisResult.segmentation_image && (
+                        <Image
+                          src={`data:image/png;base64,${analysisResult.segmentation_image}`}
+                          alt="Hasil Segmentasi Luka"
+                          fill
+                          className="object-contain rounded-lg"
+                        />
+                      )}
                     </div>
                   </div>
                   <div className="md:col-span-2 bg-white p-4 rounded-lg shadow-sm">
