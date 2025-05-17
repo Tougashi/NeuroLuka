@@ -23,9 +23,17 @@ class WoundAnalysisController extends Controller
             // Validate request
             $request->validate([
                 'image' => 'required|file|mimes:jpeg,jpg,png,gif|max:5120', // 5MB max
+                'wound_type' => 'required|string|in:luka_goresan,luka_lecet,luka_bakar,luka_terpotong,luka_terbuka',
             ]);
 
             $image = $request->file('image');
+            $woundType = $request->input('wound_type');
+
+            // Debug log
+            Log::info('Received wound type', [
+                'wound_type' => $woundType,
+                'request_data' => $request->all()
+            ]);
 
             // Store original image
             $originalName = Str::random(40) . '.' . $image->getClientOriginalExtension();
@@ -64,21 +72,39 @@ class WoundAnalysisController extends Controller
 
             // Store record in database if user is logged in
             if (Auth::check()) {
+                Log::info('Creating wound record', [
+                    'wound_type' => $woundType,
+                    'user_id' => Auth::id()
+                ]);
+
                 $woundRecord = WoundRecord::create([
                     'user_id' => Auth::id(),
                     'original_image' => $originalPath,
                     'segmentation_image' => $segmentationPath,
                     'area_cm2' => $result['area_cm2'] ?? 0,
                     'confidence' => $result['confidence'] ?? 0,
+                    'wound_type' => $woundType,
                     'analyzed_at' => now(),
+                ]);
+
+                Log::info('Wound record created', [
+                    'record_id' => $woundRecord->id,
+                    'wound_type' => $woundRecord->wound_type
                 ]);
             }
 
             $area = $result['area_cm2'] ?? 0;
+            $woundTypeInfo = $result['wound_types'][$woundType] ?? null;
+
+            // Calculate recovery time based on wound type and area
+            $baseRecoveryDays = max(7, $area * 2);
+            $recoveryFactor = $woundTypeInfo['recovery_factor'] ?? 1.0;
+            $totalRecoveryDays = $baseRecoveryDays * $recoveryFactor;
+
             $recoveryTime = '';
-            if ($area < 10) {
+            if ($totalRecoveryDays <= 14) {
                 $recoveryTime = '1-2 minggu';
-            } elseif ($area < 30) {
+            } elseif ($totalRecoveryDays <= 21) {
                 $recoveryTime = '2-3 minggu';
             } else {
                 $recoveryTime = '4-6 minggu';
@@ -92,19 +118,12 @@ class WoundAnalysisController extends Controller
                     'perimeter_cm' => round($result['perimeter_cm'] ?? 0, 2),
                     'estimated_recovery_time' => $recoveryTime,
                     'confidence' => isset($result['confidence']) ? round($result['confidence'] * 100, 1) : null,
-                    'tissue_analysis' => [
-                        'Granulasi' => 60,
-                        'Nekrosis' => 20,
-                        'Jaringan Normal' => 20
-                    ],
-                    'recommendations' => [
-                        'Bersihkan luka dengan air bersih atau larutan saline steril',
-                        'Ganti perban setiap hari atau saat basah',
-                        'Hindari aktivitas yang dapat mengganggu proses penyembuhan',
-                        'Konsultasikan dengan tenaga medis jika ada tanda infeksi'
-                    ],
+                    'wound_type' => $woundTypeInfo['name'] ?? $woundType,
+                    'recommendations' => $woundTypeInfo['recommendations'] ?? [],
                     'original_image_url' => Storage::url($originalPath),
-                    'segmentation_image_url' => $segmentationPath ? Storage::url($segmentationPath) : null
+                    'segmentation_image_url' => $segmentationPath ? Storage::url($segmentationPath) : null,
+                    'area_recovery_time' => $baseRecoveryDays . ' hari',
+                    'total_recovery_time' => $totalRecoveryDays . ' hari'
                 ]
             ]);
 

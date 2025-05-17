@@ -13,6 +13,7 @@ class WoundRecord extends Model
         'segmentation_image',
         'area_cm2',
         'confidence',
+        'wound_type',
         'note',
         'analyzed_at'
     ];

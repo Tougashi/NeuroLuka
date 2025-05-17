@@ -13,6 +13,15 @@ export default function WoundAnalysis() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState(null);
   const [error, setError] = useState(null);
+  const [selectedWoundType, setSelectedWoundType] = useState('');
+
+  const woundTypes = [
+    { id: 'luka_goresan', name: 'Luka Goresan' },
+    { id: 'luka_lecet', name: 'Luka Lecet' },
+    { id: 'luka_bakar', name: 'Luka Bakar' },
+    { id: 'luka_terpotong', name: 'Luka Terpotong' },
+    { id: 'luka_terbuka', name: 'Luka Terbuka' }
+  ];
 
   const onDrop = useCallback((acceptedFiles) => {
     const file = acceptedFiles[0];
@@ -54,6 +63,11 @@ export default function WoundAnalysis() {
       return;
     }
 
+    if (!selectedWoundType) {
+      setError('Silakan pilih jenis luka');
+      return;
+    }
+
     try {
       validateImage(image);
     } catch (validationError) {
@@ -66,8 +80,13 @@ export default function WoundAnalysis() {
 
     try {
       // Get CSRF token first
-      await axios.get('/sanctum/csrf-cookie');      const formDataLaravel = new FormData();
+      await axios.get('/sanctum/csrf-cookie');
+      
+      const formDataLaravel = new FormData();
       formDataLaravel.append('image', image);
+      formDataLaravel.append('wound_type', selectedWoundType);
+      
+      console.log('Sending wound_type:', selectedWoundType); // Debug log
 
       // Send to Laravel backend
       const uploadResponse = await axios.post('/api/analyze', formDataLaravel, {
@@ -102,6 +121,10 @@ export default function WoundAnalysis() {
       const result = {
         ...analysisResult,
         image_url: uploadResult.image_url,
+        wound_type: uploadResult.data.wound_type,
+        recommendations: uploadResult.data.recommendations,
+        area_recovery_time: uploadResult.data.area_recovery_time,
+        total_recovery_time: uploadResult.data.total_recovery_time
       };
 
       setAnalysisResult(result);
@@ -111,7 +134,8 @@ export default function WoundAnalysis() {
         try {
           await axios.post('/api/history', {
             image_url: preview,
-            analysis_result: result
+            analysis_result: result,
+            wound_type: selectedWoundType
           });
         } catch (error) {
           console.error('Gagal menyimpan riwayat:', error);
@@ -182,11 +206,32 @@ export default function WoundAnalysis() {
               )}
             </div>
 
+            {preview && (
+              <div className="mt-6">
+                <label htmlFor="woundType" className="block text-sm font-medium text-gray-700 mb-2">
+                  Pilih Jenis Luka
+                </label>
+                <select
+                  id="woundType"
+                  value={selectedWoundType}
+                  onChange={(e) => setSelectedWoundType(e.target.value)}
+                  className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm rounded-md"
+                >
+                  <option value="">Pilih jenis luka...</option>
+                  {woundTypes.map((type) => (
+                    <option key={type.id} value={type.id}>
+                      {type.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             <button
               onClick={analyzeImage}
-              disabled={!image || isAnalyzing}
+              disabled={!image || !selectedWoundType || isAnalyzing}
               className={`w-full mt-6 py-3 px-6 rounded-xl text-white font-medium text-lg transition-all duration-200 ${
-                !image || isAnalyzing
+                !image || !selectedWoundType || isAnalyzing
                   ? 'bg-gray-400 cursor-not-allowed'
                   : 'bg-green-600 hover:bg-green-700 transform hover:scale-[1.02]'
               }`}
@@ -221,21 +266,26 @@ export default function WoundAnalysis() {
               <div className="mt-8 p-6 bg-gray-50 rounded-xl">
                 <h2 className="text-2xl font-semibold text-gray-900 mb-6">Hasil Analisis</h2>
                 <div className="grid md:grid-cols-2 gap-6">
-                  <div className="bg-white p-4 rounded-lg shadow-sm">                    <h3 className="text-sm font-medium text-gray-500 mb-2">Ukuran Luka</h3>
+                  <div className="bg-white p-4 rounded-lg shadow-sm">
+                    <h3 className="text-sm font-medium text-gray-500 mb-2">Ukuran Luka</h3>
                     <div className="text-xl font-semibold text-gray-900">
                       <span>{Number(analysisResult.area_cm2).toFixed(2)} cm²</span>
                     </div>
                     <p className="text-sm text-gray-500 mt-1">Area</p>
-                  </div>                  <div className="bg-white p-4 rounded-lg shadow-sm">
+                  </div>
+                  <div className="bg-white p-4 rounded-lg shadow-sm">
                     <h3 className="text-sm font-medium text-gray-500 mb-2">Estimasi Waktu Pemulihan</h3>
-                    <p className="text-xl font-semibold text-gray-900">{analysisResult.estimated_recovery_time}</p>                    <div className="mt-2 space-y-1 text-sm text-gray-600">
+                    <p className="text-xl font-semibold text-gray-900">{analysisResult.estimated_recovery_time}</p>
+                    <div className="mt-2 space-y-1 text-sm text-gray-600">
                       <p>• Berdasarkan luas: {analysisResult.area_recovery_time}</p>
-                      {analysisResult.tissue_condition && (
-                        <p>• Kondisi jaringan: {analysisResult.tissue_condition}</p>
-                      )}
                       <p>• Total estimasi: {analysisResult.total_recovery_time}</p>
                     </div>
-                  </div><div className="md:col-span-2 bg-white p-4 rounded-lg shadow-sm">
+                  </div>
+                  <div className="md:col-span-2 bg-white p-4 rounded-lg shadow-sm">
+                    <h3 className="text-sm font-medium text-gray-500 mb-2">Jenis Luka</h3>
+                    <p className="text-xl font-semibold text-gray-900">{analysisResult.wound_type}</p>
+                  </div>
+                  <div className="md:col-span-2 bg-white p-4 rounded-lg shadow-sm">
                     <h3 className="text-sm font-medium text-gray-500 mb-2">Segmentasi Luka</h3>
                     <div className="mt-2 relative h-80 w-full">
                       {analysisResult.segmentation_image && (

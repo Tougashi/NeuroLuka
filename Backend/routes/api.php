@@ -20,17 +20,17 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
-    
+
     // Wound Analysis
     Route::post('/analyze', [WoundAnalysisController::class, 'analyze']);
-    
+
     // History routes
     Route::get('/history', function (Request $request) {
         return WoundRecord::where('user_id', $request->user()->id)
             ->orderBy('created_at', 'desc')
             ->get();
     });
-    
+
     // Authentication
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy']);
 });

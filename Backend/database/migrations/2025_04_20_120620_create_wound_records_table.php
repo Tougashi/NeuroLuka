@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('segmentation_image', 255);
             $table->decimal('area_cm2', 8, 2);
             $table->decimal('confidence', 5, 2)->nullable();
+            $table->string('wound_type', 50)->nullable();
             $table->text('note')->nullable();
             $table->dateTime('analyzed_at');
             $table->timestamps();

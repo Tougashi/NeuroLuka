@@ -105,6 +105,61 @@ async def predict_wound(file: UploadFile):
             base_recovery_days = max(7, area_cm2 * 2)  # Minimal 1 minggu, tambah 2 hari per cm²
             total_recovery_days = base_recovery_days * condition_factor
             
+            # Define wound types and their specific recommendations
+            wound_types = {
+                "luka_goresan": {
+                    "name": "Luka Goresan",
+                    "recovery_factor": 1.0,
+                    "recommendations": [
+                        "Bersihkan luka dengan air bersih atau larutan saline steril",
+                        "Oleskan antiseptik ringan",
+                        "Tutup dengan plester atau perban steril",
+                        "Ganti perban setiap hari atau saat basah"
+                    ]
+                },
+                "luka_lecet": {
+                    "name": "Luka Lecet",
+                    "recovery_factor": 1.2,
+                    "recommendations": [
+                        "Bersihkan luka dengan air bersih",
+                        "Hindari menggosok area luka",
+                        "Gunakan salep antibiotik",
+                        "Tutup dengan perban non-stick"
+                    ]
+                },
+                "luka_bakar": {
+                    "name": "Luka Bakar",
+                    "recovery_factor": 1.5,
+                    "recommendations": [
+                        "Segera dinginkan luka dengan air mengalir",
+                        "Jangan pecahkan lepuhan",
+                        "Gunakan salep khusus luka bakar",
+                        "Tutup dengan perban steril",
+                        "Hindari paparan sinar matahari"
+                    ]
+                },
+                "luka_terpotong": {
+                    "name": "Luka Terpotong",
+                    "recovery_factor": 1.3,
+                    "recommendations": [
+                        "Tekan luka untuk menghentikan perdarahan",
+                        "Bersihkan dengan antiseptik",
+                        "Gunakan plester atau jahitan jika diperlukan",
+                        "Jaga luka tetap kering"
+                    ]
+                },
+                "luka_terbuka": {
+                    "name": "Luka Terbuka",
+                    "recovery_factor": 1.4,
+                    "recommendations": [
+                        "Bersihkan luka dengan larutan saline",
+                        "Gunakan salep antibiotik",
+                        "Tutup dengan perban steril",
+                        "Ganti perban secara teratur"
+                    ]
+                }
+            }
+            
             area_recovery_time = f"{base_recovery_days:.0f} hari"
             total_recovery_time = f"{total_recovery_days:.0f} hari"
         else:
@@ -163,7 +218,8 @@ async def predict_wound(file: UploadFile):
             "confidence": confidence,
             "tissue_condition": tissue_condition,
             "area_recovery_time": area_recovery_time,
-            "total_recovery_time": total_recovery_time
+            "total_recovery_time": total_recovery_time,
+            "wound_types": wound_types
         }
 
     except Exception as e:
