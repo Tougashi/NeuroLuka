@@ -107,25 +107,6 @@ const Footer = () => {
             <p className="text-sm text-green-100">
               © {currentYear} Neuro Luka. All rights reserved.
             </p>
-            <div className="mt-4 md:mt-0">
-              <ul className="flex space-x-6 text-sm">
-                <li>
-                  <Link href="/privacy" className="text-green-100 hover:text-white transition-colors">
-                    Privacy Policy
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/terms" className="text-green-100 hover:text-white transition-colors">
-                    Terms of Service
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/cookie-policy" className="text-green-100 hover:text-white transition-colors">
-                    Cookie Policy
-                  </Link>
-                </li>
-              </ul>
-            </div>
           </div>
         </div>
       </div>
