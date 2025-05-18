@@ -180,23 +180,25 @@ export default function RiwayatPage() {
                 <div className="grid grid-cols-2 gap-4 p-6">
                   <div>
                     <h3 className="text-lg font-medium text-gray-900 mb-2">Foto Original</h3>
-                    <div className="relative h-64 rounded-lg overflow-hidden">
+                    <div className="relative h-80 w-full rounded-lg overflow-hidden bg-gray-50">
                       <Image
                         src={`${process.env.NEXT_PUBLIC_API_URL}/storage/${selectedWound.original_image}`}
                         alt="Original Wound"
                         fill
-                        className="object-cover"
+                        className="object-contain"
+                        sizes="(max-width: 768px) 100vw, 50vw"
                       />
                     </div>
                   </div>
                   <div>
                     <h3 className="text-lg font-medium text-gray-900 mb-2">Hasil Segmentasi</h3>
-                    <div className="relative h-64 rounded-lg overflow-hidden">
+                    <div className="relative h-80 w-full rounded-lg overflow-hidden bg-gray-50">
                       <Image
                         src={`${process.env.NEXT_PUBLIC_API_URL}/storage/${selectedWound.segmentation_image}`}
                         alt="Segmentation Result"
                         fill
-                        className="object-cover"
+                        className="object-contain"
+                        sizes="(max-width: 768px) 100vw, 50vw"
                       />
                     </div>
                   </div>
