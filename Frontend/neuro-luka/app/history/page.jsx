@@ -236,10 +236,6 @@ export default function RiwayatPage() {
                             <dd className="mt-1 text-sm text-gray-900">{Number(selectedWound.area_cm2).toFixed(2)} cm²</dd>
                           </div>
                           <div>
-                            <dt className="text-sm font-medium text-gray-500">Keakuratan</dt>
-                            <dd className="mt-1 text-sm text-gray-900">{Number(selectedWound.confidence * 100).toFixed(1)}%</dd>
-                          </div>
-                          <div>
                             <dt className="text-sm font-medium text-gray-500">Tanggal Analisis</dt>
                             <dd className="mt-1 text-sm text-gray-900">
                               {new Date(selectedWound.analyzed_at).toLocaleDateString('id-ID', {
