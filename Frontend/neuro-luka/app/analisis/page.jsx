@@ -215,9 +215,18 @@ export default function WoundAnalysis() {
             <div className="text-center mb-12">
               <h1 className="text-4xl font-bold text-gray-900 mb-4">Analisis Luka</h1>
               <p className="text-lg text-gray-600">Upload gambar luka untuk mendapatkan analisis mendalam</p>
-            </div>
+            </div>            <div className="bg-white rounded-2xl shadow-xl p-8 mb-8">
+              {/* Disclaimer Section */}
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+                <h2 className="text-lg font-semibold text-green-800 mb-2">Petunjuk Pengambilan Gambar:</h2>
+                <ul className="list-disc list-inside text-green-700 space-y-1">
+                  <li>Jarak kamera sekitar 25-30 cm dari area luka</li>
+                  <li>Pastikan pencahayaan cukup terang</li>
+                  <li>Fokuskan kamera tepat pada area luka</li>
+                  <li>Hindari gambar yang blur atau tidak jelas</li>
+                </ul>
+              </div>
 
-            <div className="bg-white rounded-2xl shadow-xl p-8 mb-8">
               <div
                 {...getRootProps()}
                 className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all duration-200 ${

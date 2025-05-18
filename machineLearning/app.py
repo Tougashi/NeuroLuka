@@ -30,7 +30,7 @@ WOUND_TYPES = {
         "recovery_factor": 1.0,
         "recommendations": [
             "Bersihkan luka dengan air bersih atau larutan saline steril",
-            "Oleskan antiseptik ringan",
+            "Oleskan antiseepik ringan",
             "Tutup dengan plester atau perban steril",
             "Ganti perban setiap hari atau saat basah"
         ]
@@ -113,7 +113,7 @@ async def predict_wound(file: UploadFile, wound_type: str = None):
         # Try calibration with reference object
         try:
             print("Attempting calibration...")
-            ratio = analyzer.kalibrasi_dengan_referensi(diameter_referensi_cm=4)
+            ratio = analyzer.kalibrasi_dengan_referensi(diameter_referensi_cm=4.5)
             print(f"Calibration ratio: {ratio:.4f} cm/pixel")
         except Exception as e:
             print(f"Calibration failed: {str(e)}, using default ratio")
@@ -135,7 +135,7 @@ async def predict_wound(file: UploadFile, wound_type: str = None):
         area_cm2 = analyzer.hitung_luas_luka()
         # Add 1 to area if less than 1
         if area_cm2 < 1:
-            area_cm2 += 2.1
+            area_cm2 += 2.3
         print(f"Calculated area: {area_cm2:.2f} cm²")
         
         # Analyze wound color and tissue condition
