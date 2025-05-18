@@ -1,18 +1,21 @@
-import { Providers } from './providers'
+import { Inter } from 'next/font/google'
 import './globals.css'
+import { AuthProvider } from '@/contexts/AuthContext'
+
+const inter = Inter({ subsets: ['latin'] })
 
 export const metadata = {
-  title: 'NeuroLuka - Analisis Luka Otomatis',
-  description: 'Aplikasi analisis luka otomatis menggunakan kecerdasan buatan',
+  title: 'Neuro Luka',
+  description: 'Aplikasi Analisis Luka',
 }
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="id">
-      <body>
-        <Providers>
+    <html lang="en">
+      <body className={inter.className}>
+        <AuthProvider>
           {children}
-        </Providers>
+        </AuthProvider>
       </body>
     </html>
   )

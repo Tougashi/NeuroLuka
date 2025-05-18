@@ -2,39 +2,21 @@
 import React from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import axios from '@/utils/axios'
+import { useAuth } from '@/contexts/AuthContext'
 
 const Navbar = () => {
   const [active, setActive] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const router = useRouter();
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        await axios.get('/api/user');
-        setIsAuthenticated(true);
-      } catch (error) {
-        if (error.response?.status === 401) {
-          setIsAuthenticated(false);
-        }
-      }
-    };
-
-    checkAuth();
-  }, []);
+  const { user, logout } = useAuth();
 
   const handleClick = () => {
     setActive(!active)
   }
 
-  const handleRiwayatClick = (e) => {
-    if (!isAuthenticated) {
-      e.preventDefault();
-      router.push('/login');
-    }
+  const handleLogout = async () => {
+    await logout();
   }
 
   return (
@@ -63,20 +45,12 @@ const Navbar = () => {
               <Link href={"/#cara-kerja"}>Cara Kerja</Link>
             </li>
             <li>
-              <Link href={"/riwayat"} onClick={handleRiwayatClick}>Riwayat</Link>
+              <Link href={"/history"}>Riwayat</Link>
             </li>
           </ul>          <div className='flex'>
           <div className='button flex items-center bg-green-600 hover:bg-green-800 px-3 py-0 md:px-5 md:py-3 rounded-3xl text-xs md:text-lg text-white'>
-            {isAuthenticated ? (
-              <button onClick={async () => {
-                try {
-                  await axios.post('/api/logout');
-                  setIsAuthenticated(false);
-                  router.push('/login');
-                } catch (error) {
-                  console.error('Logout error:', error);
-                }
-              }}>Keluar</button>
+            {user ? (
+              <button onClick={handleLogout}>Keluar</button>
             ) : (
               <Link href={"/login"}>Masuk</Link>
             )}

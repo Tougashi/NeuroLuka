@@ -1,19 +1,27 @@
 'use client'
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import Image from 'next/image';
 import Navbar from '@/components/Navbar';
-import { useSession } from 'next-auth/react';
 import { useDropzone } from 'react-dropzone';
 import axios from '@/utils/axios';
+import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
 
 export default function WoundAnalysis() {
-  const { data: session } = useSession();
+  const { user, loading } = useAuth();
+  const router = useRouter();
   const [image, setImage] = useState(null);
   const [preview, setPreview] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState(null);
   const [error, setError] = useState(null);
   const [selectedWoundType, setSelectedWoundType] = useState('');
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/login');
+    }
+  }, [user, loading, router]);
 
   const woundTypes = [
     { id: 'luka_goresan', name: 'Luka Goresan' },
@@ -79,14 +87,10 @@ export default function WoundAnalysis() {
     setError(null);
 
     try {
-      // Get CSRF token first
-      await axios.get('/sanctum/csrf-cookie');
-      
+      // Create form data for Laravel backend
       const formDataLaravel = new FormData();
       formDataLaravel.append('image', image);
       formDataLaravel.append('wound_type', selectedWoundType);
-      
-      console.log('Sending wound_type:', selectedWoundType); // Debug log
 
       // Send to Laravel backend
       const uploadResponse = await axios.post('/api/analyze', formDataLaravel, {
@@ -99,16 +103,19 @@ export default function WoundAnalysis() {
         throw new Error(uploadResponse.data.message || 'Gagal mengunggah gambar');
       }
 
-      const uploadResult = uploadResponse.data;      // Send to FastAPI service for analysis
+      const uploadResult = uploadResponse.data;
+
+      // Create form data for FastAPI service
       const formDataFastAPI = new FormData();
-      // Create a new file with the correct mime type
       const newFile = new File([image], image.name, { type: image.type });
       formDataFastAPI.append('file', newFile);
 
+      // Send to FastAPI service for analysis
       const analysisResponse = await axios.post('http://localhost:8090/predict', formDataFastAPI, {
         headers: {
           'Content-Type': 'multipart/form-data',
-        }
+        },
+        withCredentials: false // Disable credentials for external API
       });
 
       if (!analysisResponse.data) {
@@ -130,10 +137,10 @@ export default function WoundAnalysis() {
       setAnalysisResult(result);
 
       // Save to history if user is logged in
-      if (session?.user) {
+      if (user) {
         try {
           await axios.post('/api/history', {
-            image_url: preview,
+            image_url: uploadResult.image_url, // Use the uploaded image URL instead of preview
             analysis_result: result,
             wound_type: selectedWoundType
           });
@@ -142,7 +149,8 @@ export default function WoundAnalysis() {
         }
       }
     } catch (error) {
-      setError(error.response?.data?.message || error.message);
+      console.error('Analysis error:', error);
+      setError(error.response?.data?.message || error.message || 'Terjadi kesalahan saat menganalisis gambar');
     } finally {
       setIsAnalyzing(false);
     }

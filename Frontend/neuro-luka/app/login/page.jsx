@@ -1,20 +1,24 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import axios from '@/utils/axios';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get('callbackUrl') || '/';
+  const { user, login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    setIsClient(true);
-  }, []);
+    if (user) {
+      router.push(callbackUrl);
+    }
+  }, [user, router, callbackUrl]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -22,14 +26,8 @@ export default function LoginPage() {
     setError('');
 
     try {
-      await axios.get('/sanctum/csrf-cookie');
-      
-      const response = await axios.post('/api/login', {
-        email,
-        password
-      });      if (response.data) {
-        window.location.href = '/';  // Using window.location for full page refresh
-      }
+      await login(email, password);
+      router.push(callbackUrl);
     } catch (err) {
       console.error('Login error:', err);
       if (err.response?.status === 401) {
@@ -44,8 +42,33 @@ export default function LoginPage() {
     }
   };
 
-  if (!isClient) {
-    return null;
+  if (user) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff' }}>
+        <div style={{ background: '#fff', borderRadius: '32px', boxShadow: '0 4px 24px rgba(0,0,0,0.15)', padding: '48px 32px', width: '100%', maxWidth: '400px', textAlign: 'center' }}>
+          <h2 style={{ fontWeight: 600, fontSize: '1.5rem', marginBottom: '24px', color: '#16a34a' }}>Anda Sudah Login</h2>
+          <p style={{ marginBottom: '24px', color: '#666' }}>Anda telah terdeteksi sebagai pengguna yang sudah login. Anda akan dialihkan ke halaman beranda.</p>
+          <Link href="/">
+            <button
+              type="button"
+              style={{ 
+                width: '100%', 
+                background: '#16a34a', 
+                color: '#fff', 
+                border: 'none', 
+                borderRadius: '24px', 
+                padding: '12px', 
+                fontSize: '1.1rem', 
+                fontWeight: 500, 
+                cursor: 'pointer' 
+              }}
+            >
+              Kembali ke Beranda
+            </button>
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   return (
