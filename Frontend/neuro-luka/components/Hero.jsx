@@ -6,8 +6,8 @@ import Link from 'next/link';
 const Hero = () => {
   return (
     <section className="relative w-full min-h-screen bg-gradient-to-b from-white to-green-50 overflow-hidden">
-      <div className="container mx-auto px-4 md:px-8 lg:px-16 py-6 md:py-20 relative z-10">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-8 md:gap-12 lg:gap-16">
+      <div className="container mx-auto px-4 md:px-8 lg:px-16 py-8 md:py-24 lg:py-32 relative z-10">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-10 md:gap-14 lg:gap-16">
           <div className="w-full md:w-1/2 space-y-8">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight">
               Ukur Area Luka Kulit Otomatis dari Foto
@@ -15,7 +15,7 @@ const Hero = () => {
             <p className="text-xl md:text-2xl text-gray-700 leading-relaxed">
               Otomatis mengukur ukuran luka prediksi pemulihan luka bekerja untuk semua jenis luka
             </p>
-            <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex flex-col sm:flex-row gap-4 pt-2">
               <Link 
                 href="/analis"
                 className="inline-flex items-center justify-center px-8 py-4 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl font-medium text-lg"
@@ -67,7 +67,7 @@ const Hero = () => {
             </div>
           </div>
           
-          <div className="w-full md:w-1/2">
+          <div className="w-full md:w-1/2 mt-8 md:mt-0">
             <div className="relative">
               <div className="absolute -top-6 -left-6 w-24 h-24 bg-green-100 rounded-full opacity-50 animate-pulse"></div>
               <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-blue-100 rounded-full opacity-50 animate-pulse" style={{ animationDelay: '1s' }}></div>
