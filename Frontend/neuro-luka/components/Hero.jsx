@@ -5,19 +5,19 @@ import Link from 'next/link';
 
 const Hero = () => {
   return (
-    <section className="relative w-full min-h-screen bg-gradient-to-b from-white to-green-50 overflow-hidden">
-      <div className="container mx-auto px-4 md:px-8 lg:px-16 py-8 md:py-24 lg:py-32 relative z-10">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-10 md:gap-14 lg:gap-16">
-          <div className="w-full md:w-1/2 space-y-8">
+    <section className="relative w-full min-h-screen bg-gradient-to-b from-white to-green-50 overflow-hidden pt-20 md:pt-24">
+      <div className="container mx-auto px-4 md:px-8 lg:px-16 py-8 md:py-16 lg:py-20 relative z-10">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-12 md:gap-16 lg:gap-20">
+          <div className="w-full md:w-1/2 space-y-10">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight">
               Ukur Area Luka Kulit Otomatis dari Foto
             </h1>
             <p className="text-xl md:text-2xl text-gray-700 leading-relaxed">
               Otomatis mengukur ukuran luka prediksi pemulihan luka bekerja untuk semua jenis luka
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 pt-2">
+            <div className="flex flex-col sm:flex-row gap-4 pt-4">
               <Link 
-                href="/analis"
+                href="/analisis"
                 className="inline-flex items-center justify-center px-8 py-4 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl font-medium text-lg"
               >
                 Mulai Analisis
@@ -35,7 +35,7 @@ const Hero = () => {
                 </svg>
               </Link>
             </div>
-            <div className="flex items-center gap-8 pt-4">
+            <div className="flex items-center gap-8 pt-6">
               <div className="flex items-center">
                 <div className="flex -space-x-2">
                   <div className="w-8 h-8 rounded-full bg-green-100 border-2 border-white flex items-center justify-center">
@@ -67,12 +67,12 @@ const Hero = () => {
             </div>
           </div>
           
-          <div className="w-full md:w-1/2 mt-8 md:mt-0">
+          <div className="w-full md:w-1/2 mt-12 md:mt-0">
             <div className="relative">
               <div className="absolute -top-6 -left-6 w-24 h-24 bg-green-100 rounded-full opacity-50 animate-pulse"></div>
               <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-blue-100 rounded-full opacity-50 animate-pulse" style={{ animationDelay: '1s' }}></div>
               <div className="relative bg-white rounded-2xl shadow-xl p-8 transform hover:scale-105 transition-all duration-300">
-                <div className="space-y-6">
+                <div className="space-y-8">
                   <div className="flex items-center space-x-4">
                     <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center">
                       <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">

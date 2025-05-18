@@ -44,24 +44,14 @@ export default function LoginPage() {
 
   if (user) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff' }}>
-        <div style={{ background: '#fff', borderRadius: '32px', boxShadow: '0 4px 24px rgba(0,0,0,0.15)', padding: '48px 32px', width: '100%', maxWidth: '400px', textAlign: 'center' }}>
-          <h2 style={{ fontWeight: 600, fontSize: '1.5rem', marginBottom: '24px', color: '#16a34a' }}>Anda Sudah Login</h2>
-          <p style={{ marginBottom: '24px', color: '#666' }}>Anda telah terdeteksi sebagai pengguna yang sudah login. Anda akan dialihkan ke halaman beranda.</p>
-          <Link href="/">
+      <div className="min-h-screen flex items-center justify-center bg-white px-4 sm:px-6 lg:px-8">
+        <div className="w-full max-w-md bg-white rounded-3xl shadow-lg p-8 sm:p-12">
+          <h2 className="text-2xl font-semibold text-green-600 text-center mb-6">Anda Sudah Login</h2>
+          <p className="text-gray-600 text-center mb-6">Anda telah terdeteksi sebagai pengguna yang sudah login. Anda akan dialihkan ke halaman beranda.</p>
+          <Link href="/" className="block w-full">
             <button
               type="button"
-              style={{ 
-                width: '100%', 
-                background: '#16a34a', 
-                color: '#fff', 
-                border: 'none', 
-                borderRadius: '24px', 
-                padding: '12px', 
-                fontSize: '1.1rem', 
-                fontWeight: 500, 
-                cursor: 'pointer' 
-              }}
+              className="w-full bg-green-600 text-white rounded-3xl py-3 px-4 text-lg font-medium hover:bg-green-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
             >
               Kembali ke Beranda
             </button>
@@ -72,65 +62,65 @@ export default function LoginPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff' }}>
-      <div style={{ background: '#fff', borderRadius: '32px', boxShadow: '0 4px 24px rgba(0,0,0,0.15)', padding: '48px 32px', width: '100%', maxWidth: '400px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <h2 style={{ fontWeight: 600, fontSize: '2rem', marginBottom: '32px', color:'#16a34a' }}>Masuk</h2>
-        <form onSubmit={handleSubmit} style={{ width: '100%' }}>
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            style={{ width: '100%', padding: '12px 20px', borderRadius: '24px', border: '1px solid #ccc', marginBottom: '20px', fontSize: '1rem' }}
-          />
-          <input
-            type="password"
-            placeholder="Kata Sandi"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            style={{ width: '100%', padding: '12px 20px', borderRadius: '24px', border: '1px solid #ccc', marginBottom: '8px', fontSize: '1rem' }}
-          />
+    <div className="min-h-screen flex items-center justify-center bg-white px-4 sm:px-6 lg:px-8">
+      <div className="w-full max-w-md bg-white rounded-3xl shadow-lg p-6 sm:p-12">
+        <h2 className="text-3xl font-semibold text-green-600 text-center mb-8">Masuk</h2>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <input
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="w-full px-4 py-3 rounded-3xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors duration-200"
+            />
+          </div>
+          <div>
+            <input
+              type="password"
+              placeholder="Kata Sandi"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="w-full px-4 py-3 rounded-3xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors duration-200"
+            />
+          </div>
           {error && (
-            <div style={{ color: 'red', marginBottom: '20px', textAlign: 'center', padding: '10px', backgroundColor: '#FEE2E2', borderRadius: '8px' }}>
+            <div className="bg-red-50 text-red-600 p-3 rounded-xl text-center text-sm">
               {error}
             </div>
           )}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '20px' }}>
-            <Link href="/forgot-password" style={{ fontSize: '0.9rem', color: '#444', fontWeight: 500 }}>Lupa Kata Sandi?</Link>
+          <div className="flex justify-end">
+            <Link href="/forgot-password" className="text-sm text-gray-600 hover:text-gray-900 font-medium">
+              Lupa Kata Sandi?
+            </Link>
           </div>
           <button 
             type="submit" 
             disabled={isLoading}
-            style={{ 
-              width: '100%', 
-              background: isLoading ? '#cccccc' : '#16a34a', 
-              color: '#fff', 
-              border: 'none', 
-              borderRadius: '24px', 
-              padding: '12px', 
-              fontSize: '1.1rem', 
-              fontWeight: 500, 
-              boxShadow: '0 4px 8px rgba(0,0,0,0.10)', 
-              marginBottom: '16px', 
-              cursor: isLoading ? 'not-allowed' : 'pointer' 
-            }}
+            className={`w-full py-3 px-4 rounded-3xl text-white text-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+              isLoading 
+                ? 'bg-gray-400 cursor-not-allowed' 
+                : 'bg-green-600 hover:bg-green-700 focus:ring-green-500 shadow-md hover:shadow-lg'
+            }`}
           >
             {isLoading ? 'Sedang masuk...' : 'Masuk'}
           </button>
-          <Link href="/">
+          <Link href="/" className="block w-full">
             <button
               type="button"
-              style={{ width: '100%', background: '#eee',color:'#16a34a' , border: 'none', borderRadius: '24px', padding: '12px', fontSize: '1.1rem', fontWeight: 500, marginTop: '8px', cursor: 'pointer', marginBottom: '16px' }}
+              className="w-full py-3 px-4 rounded-3xl bg-gray-100 text-green-600 text-lg font-medium hover:bg-gray-200 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
             >
               Kembali ke Beranda
             </button>
           </Link>
         </form>
-        <div style={{ fontSize: '0.95rem', marginBottom: '16px' }}>
+        <div className="mt-6 text-center text-sm text-gray-600">
           Belum punya akun?{' '}
-          <Link href="/register" style={{ color: '#16a34a', fontWeight: 600, textDecoration: 'underline' }}>Daftar</Link>
+          <Link href="/register" className="text-green-600 font-semibold hover:underline">
+            Daftar
+          </Link>
         </div>
       </div>
     </div>
