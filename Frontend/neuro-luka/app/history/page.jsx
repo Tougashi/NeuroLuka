@@ -10,8 +10,59 @@ export default function RiwayatPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [history, setHistory] = useState([]);
+  const [selectedWound, setSelectedWound] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Define WOUND_TYPES at component level
+  const WOUND_TYPES = {
+    "luka_goresan": {
+      name: "Luka Goresan",
+      recommendations: [
+        "Bersihkan luka dengan air bersih atau larutan saline steril",
+        "Oleskan antiseptik ringan",
+        "Tutup dengan plester atau perban steril",
+        "Ganti perban setiap hari atau saat basah"
+      ]
+    },
+    "luka_lecet": {
+      name: "Luka Lecet",
+      recommendations: [
+        "Bersihkan luka dengan air bersih",
+        "Hindari menggosok area luka",
+        "Gunakan salep antibiotik",
+        "Tutup dengan perban non-stick"
+      ]
+    },
+    "luka_bakar": {
+      name: "Luka Bakar",
+      recommendations: [
+        "Segera dinginkan luka dengan air mengalir",
+        "Jangan pecahkan lepuhan",
+        "Gunakan salep khusus luka bakar",
+        "Tutup dengan perban steril",
+        "Hindari paparan sinar matahari"
+      ]
+    },
+    "luka_terpotong": {
+      name: "Luka Terpotong",
+      recommendations: [
+        "Tekan luka untuk menghentikan perdarahan",
+        "Bersihkan dengan antiseptik",
+        "Gunakan plester atau jahitan jika diperlukan",
+        "Jaga luka tetap kering"
+      ]
+    },
+    "luka_terbuka": {
+      name: "Luka Terbuka",
+      recommendations: [
+        "Bersihkan luka dengan larutan saline",
+        "Gunakan salep antibiotik",
+        "Tutup dengan perban steril",
+        "Ganti perban secara teratur"
+      ]
+    }
+  };
 
   useEffect(() => {
     if (!loading && !user) {
@@ -25,6 +76,9 @@ export default function RiwayatPage() {
         try {
           const response = await axios.get('/api/history');
           setHistory(response.data);
+          if (response.data.length > 0) {
+            setSelectedWound(response.data[0]);
+          }
         } catch (error) {
           console.error('Error fetching history:', error);
           setError('Gagal memuat riwayat analisis');
@@ -57,13 +111,50 @@ export default function RiwayatPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
       <Navbar />
-      <main className="container mx-auto px-4 py-12">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">Riwayat Analisis</h1>
-            <p className="text-lg text-gray-600">Lihat riwayat analisis luka Anda</p>
+      <div className="flex h-[calc(100vh-80px)]">
+        {/* Sidebar */}
+        <div className="w-80 bg-white border-r border-gray-200 overflow-y-auto">
+          <div className="p-4 border-b border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-900">Riwayat Analisis</h2>
           </div>
+          <div className="divide-y divide-gray-200">
+            {history.map((item, index) => (
+              <button
+                key={index}
+                onClick={() => setSelectedWound(item)}
+                className={`w-full p-4 text-left hover:bg-gray-50 transition-colors ${
+                  selectedWound?.id === item.id ? 'bg-green-50' : ''
+                }`}
+              >
+                <div className="flex items-center space-x-3">
+                  <div className="relative h-12 w-12 flex-shrink-0">
+                    <Image
+                      src={`${process.env.NEXT_PUBLIC_API_URL}/storage/${item.original_image}`}
+                      alt="Wound Analysis"
+                      fill
+                      className="object-cover rounded-lg"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">
+                      {item.wound_type}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {new Date(item.analyzed_at).toLocaleDateString('id-ID', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric'
+                      })}
+                    </p>
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
 
+        {/* Main Content */}
+        <div className="flex-1 overflow-y-auto p-8">
           {error && (
             <div className="mb-8 p-4 bg-red-50 border border-red-200 rounded-xl">
               <div className="flex">
@@ -83,47 +174,103 @@ export default function RiwayatPage() {
             <div className="text-center py-12">
               <p className="text-gray-500">Belum ada riwayat analisis</p>
             </div>
-          ) : (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {history.map((item, index) => (
-                <div key={index} className="bg-white rounded-xl shadow-md overflow-hidden">
-                  <div className="relative h-48">
-                    <Image
-                      src={`${process.env.NEXT_PUBLIC_API_URL}/storage/${item.original_image}`}
-                      alt="Wound Analysis"
-                      fill
-                      className="object-cover"
-                    />
+          ) : selectedWound ? (
+            <div className="max-w-4xl mx-auto">
+              <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+                <div className="grid grid-cols-2 gap-4 p-6">
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">Foto Original</h3>
+                    <div className="relative h-64 rounded-lg overflow-hidden">
+                      <Image
+                        src={`${process.env.NEXT_PUBLIC_API_URL}/storage/${selectedWound.original_image}`}
+                        alt="Original Wound"
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
                   </div>
-                  <div className="p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                      {item.wound_type}
-                    </h3>
-                    <div className="space-y-2">
-                      <p className="text-sm text-gray-600">
-                        <span className="font-medium">Ukuran:</span> {Number(item.area_cm2).toFixed(2)} cm²
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        <span className="font-medium">Keakuratan:</span> {Number(item.confidence * 100).toFixed(1)}%
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        <span className="font-medium">Tanggal:</span>{' '}
-                        {new Date(item.analyzed_at).toLocaleDateString('id-ID', {
-                          day: 'numeric',
-                          month: 'long',
-                          year: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </p>
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">Hasil Segmentasi</h3>
+                    <div className="relative h-64 rounded-lg overflow-hidden">
+                      <Image
+                        src={`${process.env.NEXT_PUBLIC_API_URL}/storage/${selectedWound.segmentation_image}`}
+                        alt="Segmentation Result"
+                        fill
+                        className="object-cover"
+                      />
                     </div>
                   </div>
                 </div>
-              ))}
+
+                <div className="border-t border-gray-200 p-6">
+                  <div className="grid grid-cols-2 gap-6">
+                    <div>
+                      <h3 className="text-lg font-medium text-gray-900 mb-4">Informasi Luka</h3>
+                      <dl className="space-y-3">
+                        <div>
+                          <dt className="text-sm font-medium text-gray-500">Jenis Luka</dt>
+                          <dd className="mt-1 text-sm text-gray-900">{selectedWound.wound_type}</dd>
+                        </div>
+                        <div>
+                          <dt className="text-sm font-medium text-gray-500">Ukuran</dt>
+                          <dd className="mt-1 text-sm text-gray-900">{Number(selectedWound.area_cm2).toFixed(2)} cm²</dd>
+                        </div>
+                        <div>
+                          <dt className="text-sm font-medium text-gray-500">Keakuratan</dt>
+                          <dd className="mt-1 text-sm text-gray-900">{Number(selectedWound.confidence * 100).toFixed(1)}%</dd>
+                        </div>
+                        <div>
+                          <dt className="text-sm font-medium text-gray-500">Tanggal Analisis</dt>
+                          <dd className="mt-1 text-sm text-gray-900">
+                            {new Date(selectedWound.analyzed_at).toLocaleDateString('id-ID', {
+                              day: 'numeric',
+                              month: 'long',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </dd>
+                        </div>
+                      </dl>
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-medium text-gray-900 mb-4">Estimasi Pemulihan</h3>
+                      <dl className="space-y-3">
+                        <div>
+                          <dt className="text-sm font-medium text-gray-500">Kondisi Jaringan</dt>
+                          <dd className="mt-1 text-sm text-gray-900">{selectedWound.tissue_condition}</dd>
+                        </div>
+                        <div>
+                          <dt className="text-sm font-medium text-gray-500">Estimasi Berdasarkan Luas</dt>
+                          <dd className="mt-1 text-sm text-gray-900">{selectedWound.area_recovery_time}</dd>
+                        </div>
+                        <div>
+                          <dt className="text-sm font-medium text-gray-500">Total Estimasi Pemulihan</dt>
+                          <dd className="mt-1 text-sm text-gray-900">{selectedWound.total_recovery_time}</dd>
+                        </div>
+                      </dl>
+                    </div>
+                  </div>
+
+                  <div className="mt-6">
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">Rekomendasi Perawatan</h3>
+                    <div className="md:col-span-2 bg-white p-4 rounded-lg shadow-sm">
+                      <h3 className="text-sm font-medium text-gray-500 mb-2">Rekomendasi Perawatan</h3>
+                      <div className="prose prose-sm max-w-none">
+                        <ul className="list-disc pl-4 text-gray-700 space-y-1">
+                          {WOUND_TYPES[selectedWound.wound_type]?.recommendations.map((rec, index) => (
+                            <li key={index}>{rec}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
-          )}
+          ) : null}
         </div>
-      </main>
+      </div>
     </div>
   );
 } 

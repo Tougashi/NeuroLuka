@@ -14,19 +14,75 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000"],  # Frontend URL
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
-    expose_headers=["Content-Type"]
+    allow_credentials=False,  # Set to False since we don't need credentials for FastAPI
+    allow_methods=["*"],  # Allow all methods
+    allow_headers=["*"],  # Allow all headers
+    expose_headers=["*"]  # Expose all headers
 )
 
 # Initialize the analyzer
 analyzer = AnalisisLuka(path_model="model_segmentasi_luka2.pth")
 
+# Define wound types and their specific recommendations
+WOUND_TYPES = {
+    "luka_goresan": {
+        "name": "Luka Goresan",
+        "recovery_factor": 1.0,
+        "recommendations": [
+            "Bersihkan luka dengan air bersih atau larutan saline steril",
+            "Oleskan antiseptik ringan",
+            "Tutup dengan plester atau perban steril",
+            "Ganti perban setiap hari atau saat basah"
+        ]
+    },
+    "luka_lecet": {
+        "name": "Luka Lecet",
+        "recovery_factor": 1.2,
+        "recommendations": [
+            "Bersihkan luka dengan air bersih",
+            "Hindari menggosok area luka",
+            "Gunakan salep antibiotik",
+            "Tutup dengan perban non-stick"
+        ]
+    },
+    "luka_bakar": {
+        "name": "Luka Bakar",
+        "recovery_factor": 1.5,
+        "recommendations": [
+            "Segera dinginkan luka dengan air mengalir",
+            "Jangan pecahkan lepuhan",
+            "Gunakan salep khusus luka bakar",
+            "Tutup dengan perban steril",
+            "Hindari paparan sinar matahari"
+        ]
+    },
+    "luka_terpotong": {
+        "name": "Luka Terpotong",
+        "recovery_factor": 1.3,
+        "recommendations": [
+            "Tekan luka untuk menghentikan perdarahan",
+            "Bersihkan dengan antiseptik",
+            "Gunakan plester atau jahitan jika diperlukan",
+            "Jaga luka tetap kering"
+        ]
+    },
+    "luka_terbuka": {
+        "name": "Luka Terbuka",
+        "recovery_factor": 1.4,
+        "recommendations": [
+            "Bersihkan luka dengan larutan saline",
+            "Gunakan salep antibiotik",
+            "Tutup dengan perban steril",
+            "Ganti perban secara teratur"
+        ]
+    }
+}
+
 @app.post("/predict")
-async def predict_wound(file: UploadFile):
+async def predict_wound(file: UploadFile, wound_type: str = None):
     print(f"Received request for file: {file.filename}")
-    try:        # Validate file type
+    try:
+        # Validate file type
         print(f"File content type: {file.content_type}")
         allowed_types = ["image/jpeg", "image/jpg", "image/pjpeg", "image/png", "image/gif"]
         if file.content_type not in allowed_types:
@@ -103,62 +159,16 @@ async def predict_wound(file: UploadFile):
             
             # Calculate recovery time estimation
             base_recovery_days = max(7, area_cm2 * 2)  # Minimal 1 minggu, tambah 2 hari per cm²
-            total_recovery_days = base_recovery_days * condition_factor
             
-            # Define wound types and their specific recommendations
-            wound_types = {
-                "luka_goresan": {
-                    "name": "Luka Goresan",
-                    "recovery_factor": 1.0,
-                    "recommendations": [
-                        "Bersihkan luka dengan air bersih atau larutan saline steril",
-                        "Oleskan antiseptik ringan",
-                        "Tutup dengan plester atau perban steril",
-                        "Ganti perban setiap hari atau saat basah"
-                    ]
-                },
-                "luka_lecet": {
-                    "name": "Luka Lecet",
-                    "recovery_factor": 1.2,
-                    "recommendations": [
-                        "Bersihkan luka dengan air bersih",
-                        "Hindari menggosok area luka",
-                        "Gunakan salep antibiotik",
-                        "Tutup dengan perban non-stick"
-                    ]
-                },
-                "luka_bakar": {
-                    "name": "Luka Bakar",
-                    "recovery_factor": 1.5,
-                    "recommendations": [
-                        "Segera dinginkan luka dengan air mengalir",
-                        "Jangan pecahkan lepuhan",
-                        "Gunakan salep khusus luka bakar",
-                        "Tutup dengan perban steril",
-                        "Hindari paparan sinar matahari"
-                    ]
-                },
-                "luka_terpotong": {
-                    "name": "Luka Terpotong",
-                    "recovery_factor": 1.3,
-                    "recommendations": [
-                        "Tekan luka untuk menghentikan perdarahan",
-                        "Bersihkan dengan antiseptik",
-                        "Gunakan plester atau jahitan jika diperlukan",
-                        "Jaga luka tetap kering"
-                    ]
-                },
-                "luka_terbuka": {
-                    "name": "Luka Terbuka",
-                    "recovery_factor": 1.4,
-                    "recommendations": [
-                        "Bersihkan luka dengan larutan saline",
-                        "Gunakan salep antibiotik",
-                        "Tutup dengan perban steril",
-                        "Ganti perban secara teratur"
-                    ]
-                }
-            }
+            # Apply wound type factor if available
+            wound_type_factor = 1.0
+            recommendations = []
+            if wound_type and wound_type in WOUND_TYPES:
+                wound_type_info = WOUND_TYPES[wound_type]
+                wound_type_factor = wound_type_info["recovery_factor"]
+                recommendations = wound_type_info["recommendations"]
+            
+            total_recovery_days = base_recovery_days * condition_factor * wound_type_factor
             
             area_recovery_time = f"{base_recovery_days:.0f} hari"
             total_recovery_time = f"{total_recovery_days:.0f} hari"
@@ -166,6 +176,7 @@ async def predict_wound(file: UploadFile):
             tissue_condition = "Tidak dapat menentukan kondisi jaringan"
             area_recovery_time = "Tidak dapat ditentukan"
             total_recovery_time = "Tidak dapat ditentukan"
+            recommendations = []
             
         # Create visualization
         h, w = image_np.shape[:2]
@@ -208,7 +219,8 @@ async def predict_wound(file: UploadFile):
         # Calculate confidence as mean probability in wound region
         if hasattr(analyzer, 'mask_luka_akhir') and np.any(analyzer.mask_luka_akhir > 0):
             confidence = float(np.mean(analyzer.mask_luka_akhir[analyzer.mask_luka_akhir > 0]))
-        else:            confidence = 0.0
+        else:
+            confidence = 0.0
             
         print(f"Analysis complete - Area: {area_cm2:.2f} cm2, Confidence: {confidence:.2%}")
         
@@ -219,7 +231,7 @@ async def predict_wound(file: UploadFile):
             "tissue_condition": tissue_condition,
             "area_recovery_time": area_recovery_time,
             "total_recovery_time": total_recovery_time,
-            "wound_types": wound_types
+            "recommendations": recommendations
         }
 
     except Exception as e:

@@ -47,7 +47,9 @@ class WoundAnalysisController extends Controller
             // Send to FastAPI
             $response = Http::timeout(30)
                 ->attach('file', fopen($image->getRealPath(), 'r'), $image->getClientOriginalName())
-                ->post(self::FASTAPI_URL . '/predict');
+                ->post(self::FASTAPI_URL . '/predict', [
+                    'wound_type' => $woundType
+                ]);
 
             if (!$response->successful()) {
                 Log::error('FastAPI Error', [
@@ -85,6 +87,10 @@ class WoundAnalysisController extends Controller
                     'confidence' => $result['confidence'] ?? 0,
                     'wound_type' => $woundType,
                     'analyzed_at' => now(),
+                    'area_recovery_time' => $result['area_recovery_time'] ?? null,
+                    'total_recovery_time' => $result['total_recovery_time'] ?? null,
+                    'tissue_condition' => $result['tissue_condition'] ?? null,
+                    'recommendations' => $result['recommendations'] ?? null
                 ]);
 
                 Log::info('Wound record created', [
@@ -93,37 +99,19 @@ class WoundAnalysisController extends Controller
                 ]);
             }
 
-            $area = $result['area_cm2'] ?? 0;
-            $woundTypeInfo = $result['wound_types'][$woundType] ?? null;
-
-            // Calculate recovery time based on wound type and area
-            $baseRecoveryDays = max(7, $area * 2);
-            $recoveryFactor = $woundTypeInfo['recovery_factor'] ?? 1.0;
-            $totalRecoveryDays = $baseRecoveryDays * $recoveryFactor;
-
-            $recoveryTime = '';
-            if ($totalRecoveryDays <= 14) {
-                $recoveryTime = '1-2 minggu';
-            } elseif ($totalRecoveryDays <= 21) {
-                $recoveryTime = '2-3 minggu';
-            } else {
-                $recoveryTime = '4-6 minggu';
-            }
-
             // Return formatted response
             return response()->json([
                 'success' => true,
                 'data' => [
-                    'area_cm2' => round($area, 2),
-                    'perimeter_cm' => round($result['perimeter_cm'] ?? 0, 2),
-                    'estimated_recovery_time' => $recoveryTime,
+                    'area_cm2' => round($result['area_cm2'] ?? 0, 2),
                     'confidence' => isset($result['confidence']) ? round($result['confidence'] * 100, 1) : null,
-                    'wound_type' => $woundTypeInfo['name'] ?? $woundType,
-                    'recommendations' => $woundTypeInfo['recommendations'] ?? [],
+                    'wound_type' => $woundType,
+                    'recommendations' => $result['recommendations'] ?? [],
                     'original_image_url' => Storage::url($originalPath),
                     'segmentation_image_url' => $segmentationPath ? Storage::url($segmentationPath) : null,
-                    'area_recovery_time' => $baseRecoveryDays . ' hari',
-                    'total_recovery_time' => $totalRecoveryDays . ' hari'
+                    'area_recovery_time' => $result['area_recovery_time'] ?? null,
+                    'total_recovery_time' => $result['total_recovery_time'] ?? null,
+                    'tissue_condition' => $result['tissue_condition'] ?? null
                 ]
             ]);
 

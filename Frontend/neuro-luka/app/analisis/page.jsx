@@ -109,14 +109,20 @@ export default function WoundAnalysis() {
       const formDataFastAPI = new FormData();
       const newFile = new File([image], image.name, { type: image.type });
       formDataFastAPI.append('file', newFile);
+      formDataFastAPI.append('wound_type', selectedWoundType);
 
-      // Send to FastAPI service for analysis
-      const analysisResponse = await axios.post('http://localhost:8090/predict', formDataFastAPI, {
+      // Create a separate axios instance for FastAPI
+      const fastApiClient = axios.create({
+        baseURL: 'http://localhost:8090',
         headers: {
           'Content-Type': 'multipart/form-data',
+          'Accept': 'application/json'
         },
-        withCredentials: false // Disable credentials for external API
+        withCredentials: false
       });
+
+      // Send to FastAPI service for analysis
+      const analysisResponse = await fastApiClient.post('/predict', formDataFastAPI);
 
       if (!analysisResponse.data) {
         throw new Error('Gagal menganalisis gambar');
@@ -124,35 +130,79 @@ export default function WoundAnalysis() {
 
       const analysisResult = analysisResponse.data;
 
+      // Get recommendations based on wound type
+      const woundTypeInfo = WOUND_TYPES[selectedWoundType] || {
+        name: selectedWoundType,
+        recommendations: []
+      };
+
       // Combine results
       const result = {
         ...analysisResult,
-        image_url: uploadResult.image_url,
-        wound_type: uploadResult.data.wound_type,
-        recommendations: uploadResult.data.recommendations,
-        area_recovery_time: uploadResult.data.area_recovery_time,
-        total_recovery_time: uploadResult.data.total_recovery_time
+        image_url: uploadResult.data.original_image_url,
+        segmentation_image_url: uploadResult.data.segmentation_image_url,
+        wound_type: woundTypeInfo.name,
+        recommendations: woundTypeInfo.recommendations,
+        area_recovery_time: analysisResult.area_recovery_time,
+        total_recovery_time: analysisResult.total_recovery_time
       };
 
       setAnalysisResult(result);
-
-      // Save to history if user is logged in
-      if (user) {
-        try {
-          await axios.post('/api/history', {
-            image_url: uploadResult.image_url, // Use the uploaded image URL instead of preview
-            analysis_result: result,
-            wound_type: selectedWoundType
-          });
-        } catch (error) {
-          console.error('Gagal menyimpan riwayat:', error);
-        }
-      }
     } catch (error) {
       console.error('Analysis error:', error);
       setError(error.response?.data?.message || error.message || 'Terjadi kesalahan saat menganalisis gambar');
     } finally {
       setIsAnalyzing(false);
+    }
+  };
+
+  // Define WOUND_TYPES at component level
+  const WOUND_TYPES = {
+    "luka_goresan": {
+      name: "Luka Goresan",
+      recommendations: [
+        "Bersihkan luka dengan air bersih atau larutan saline steril",
+        "Oleskan antiseptik ringan",
+        "Tutup dengan plester atau perban steril",
+        "Ganti perban setiap hari atau saat basah"
+      ]
+    },
+    "luka_lecet": {
+      name: "Luka Lecet",
+      recommendations: [
+        "Bersihkan luka dengan air bersih",
+        "Hindari menggosok area luka",
+        "Gunakan salep antibiotik",
+        "Tutup dengan perban non-stick"
+      ]
+    },
+    "luka_bakar": {
+      name: "Luka Bakar",
+      recommendations: [
+        "Segera dinginkan luka dengan air mengalir",
+        "Jangan pecahkan lepuhan",
+        "Gunakan salep khusus luka bakar",
+        "Tutup dengan perban steril",
+        "Hindari paparan sinar matahari"
+      ]
+    },
+    "luka_terpotong": {
+      name: "Luka Terpotong",
+      recommendations: [
+        "Tekan luka untuk menghentikan perdarahan",
+        "Bersihkan dengan antiseptik",
+        "Gunakan plester atau jahitan jika diperlukan",
+        "Jaga luka tetap kering"
+      ]
+    },
+    "luka_terbuka": {
+      name: "Luka Terbuka",
+      recommendations: [
+        "Bersihkan luka dengan larutan saline",
+        "Gunakan salep antibiotik",
+        "Tutup dengan perban steril",
+        "Ganti perban secara teratur"
+      ]
     }
   };
 

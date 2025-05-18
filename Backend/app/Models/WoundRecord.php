@@ -15,13 +15,18 @@ class WoundRecord extends Model
         'confidence',
         'wound_type',
         'note',
-        'analyzed_at'
+        'analyzed_at',
+        'area_recovery_time',
+        'total_recovery_time',
+        'tissue_condition',
+        'recommendations'
     ];
 
     protected $casts = [
         'area_cm2' => 'decimal:2',
         'confidence' => 'decimal:2',
-        'analyzed_at' => 'datetime'
+        'analyzed_at' => 'datetime',
+        'recommendations' => 'array'
     ];
 
     public function user(): BelongsTo

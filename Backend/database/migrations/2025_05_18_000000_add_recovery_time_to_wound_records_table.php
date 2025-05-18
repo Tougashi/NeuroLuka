@@ -12,7 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('wound_records', function (Blueprint $table) {
-            //
+            $table->string('area_recovery_time')->nullable();
+            $table->string('total_recovery_time')->nullable();
+            $table->string('tissue_condition')->nullable();
+            $table->json('recommendations')->nullable();
         });
     }
 
@@ -22,7 +25,12 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('wound_records', function (Blueprint $table) {
-            //
+            $table->dropColumn([
+                'area_recovery_time',
+                'total_recovery_time',
+                'tissue_condition',
+                'recommendations'
+            ]);
         });
     }
 };
