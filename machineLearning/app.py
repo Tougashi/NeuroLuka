@@ -135,7 +135,7 @@ async def predict_wound(file: UploadFile, wound_type: str = None):
         area_cm2 = analyzer.hitung_luas_luka()
         # Add 1 to area if less than 1
         if area_cm2 < 1:
-            area_cm2 += 1.4
+            area_cm2 += 2.1
         print(f"Calculated area: {area_cm2:.2f} cm²")
         
         # Analyze wound color and tissue condition
