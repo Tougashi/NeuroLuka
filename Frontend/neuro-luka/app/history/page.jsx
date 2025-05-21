@@ -20,47 +20,110 @@ export default function RiwayatPage() {
     "luka_goresan": {
       name: "Luka Goresan",
       recommendations: [
-        "Bersihkan luka dengan air bersih atau larutan saline steril",
-        "Oleskan antiseptik ringan",
-        "Tutup dengan plester atau perban steril",
-        "Ganti perban setiap hari atau saat basah"
+        {
+          title: "Pembersihan Luka",
+          description: "Bersihkan luka dengan air bersih atau larutan saline steril"
+        },
+        {
+          title: "Antiseptik",
+          description: "Oleskan antiseptik ringan"
+        },
+        {
+          title: "Perban",
+          description: "Tutup dengan plester atau perban steril"
+        },
+        {
+          title: "Perawatan Rutin",
+          description: "Ganti perban setiap hari atau saat basah"
+        }
       ]
     },
     "luka_lecet": {
       name: "Luka Lecet",
       recommendations: [
-        "Bersihkan luka dengan air bersih",
-        "Hindari menggosok area luka",
-        "Gunakan salep antibiotik",
-        "Tutup dengan perban non-stick"
+        {
+          title: "Pembersihan",
+          description: "Bersihkan luka dengan air bersih"
+        },
+        {
+          title: "Perawatan",
+          description: "Hindari menggosok area luka"
+        },
+        {
+          title: "Pengobatan",
+          description: "Gunakan salep antibiotik"
+        },
+        {
+          title: "Perban",
+          description: "Tutup dengan perban non-stick"
+        }
       ]
     },
     "luka_bakar": {
       name: "Luka Bakar",
       recommendations: [
-        "Segera dinginkan luka dengan air mengalir",
-        "Jangan pecahkan lepuhan",
-        "Gunakan salep khusus luka bakar",
-        "Tutup dengan perban steril",
-        "Hindari paparan sinar matahari"
+        {
+          title: "Pertolongan Pertama",
+          description: "Segera dinginkan luka dengan air mengalir"
+        },
+        {
+          title: "Perawatan Lepuhan",
+          description: "Jangan pecahkan lepuhan"
+        },
+        {
+          title: "Pengobatan",
+          description: "Gunakan salep khusus luka bakar"
+        },
+        {
+          title: "Perban",
+          description: "Tutup dengan perban steril"
+        },
+        {
+          title: "Perlindungan",
+          description: "Hindari paparan sinar matahari"
+        }
       ]
     },
     "luka_terpotong": {
       name: "Luka Terpotong",
       recommendations: [
-        "Tekan luka untuk menghentikan perdarahan",
-        "Bersihkan dengan antiseptik",
-        "Gunakan plester atau jahitan jika diperlukan",
-        "Jaga luka tetap kering"
+        {
+          title: "Pertolongan Pertama",
+          description: "Tekan luka untuk menghentikan perdarahan"
+        },
+        {
+          title: "Pembersihan",
+          description: "Bersihkan dengan antiseptik"
+        },
+        {
+          title: "Penanganan",
+          description: "Gunakan plester atau jahitan jika diperlukan"
+        },
+        {
+          title: "Perawatan",
+          description: "Jaga luka tetap kering"
+        }
       ]
     },
     "luka_terbuka": {
       name: "Luka Terbuka",
       recommendations: [
-        "Bersihkan luka dengan larutan saline",
-        "Gunakan salep antibiotik",
-        "Tutup dengan perban steril",
-        "Ganti perban secara teratur"
+        {
+          title: "Pembersihan",
+          description: "Bersihkan luka dengan larutan saline"
+        },
+        {
+          title: "Pengobatan",
+          description: "Gunakan salep antibiotik"
+        },
+        {
+          title: "Perban",
+          description: "Tutup dengan perban steril"
+        },
+        {
+          title: "Perawatan Rutin",
+          description: "Ganti perban secara teratur"
+        }
       ]
     }
   };
